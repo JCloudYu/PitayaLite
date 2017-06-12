@@ -1,9 +1,5 @@
 <?php
-/**
- * 1017.NeighborApp - PBStdio.php
- * Created by JCloudYu on 2015/02/04 15:00
- */
-	final class PBStdIO {
+	class PBStdIO {
 		public static function READ($msg = "", $isPassword = FALSE, $stars = FALSE) {
 		
 			if ( !empty($msg) ) fwrite(STDOUT, "{$msg}");

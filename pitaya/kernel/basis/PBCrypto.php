@@ -1,10 +1,4 @@
 <?php
-/**
- * 1017.NeighborApp - PBCrypto.php
- * Created by JCloudYu on 2015/02/20 03:15
- */
- 	using( 'kernel.basis.PBObject' );
- 
 	final class PBCrypto {
 		const CANDIDATES_LOWER_NO_SYM = "0123456789abcdefghijklmnopqrstuvwxyz";
 		const CANDIDATES_MIXED_NO_SYM = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -83,7 +77,6 @@
 			return $result;
 		}
 	}
-	
 	final class PBJWT {
 		const ALG_NONE	= 'NONE';
 		const ALG_HS256 = 'HS256';
@@ -138,27 +131,22 @@
 			return NULL;
 		}
 	}
-	
 	final class PBBase64 {
 		public static function URLEncode( $data ){
 			return strtr(rtrim(base64_encode( $data ), '='), '+/', '-_');
 		}
-
 		public static function URLDecode( $data ){
 			$length = strlen( $data );
 			$repeat = 4 - ($length % 4);
 			return base64_decode( strtr( $data . str_repeat( "=", $repeat ), '-_', '+/'), TRUE );
 		}
-
 		public static function Encode( $data ){
 			return base64_encode($data);
 		}
-
 		public static function Decode( $data ) {
 			return base64_decode( $data, TRUE );
 		}
 	}
-	
 	final class PBRSA extends PBObject {
 	
 		const DEFAULT_KEY_LENGTH = 2048;

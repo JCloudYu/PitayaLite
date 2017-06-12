@@ -1,11 +1,9 @@
 <?php
-	// The class provides the native getter and setter functions
 	class PBObject {
 		private static $_getPrefix = "__get_";
 		private static $_setPrefix = "__set_";
 
 		public function &__get($name) {
-
 			$getTarget = self::$_getPrefix.$name;
 			$setTarget = self::$_setPrefix.$name;
 			if ( method_exists($this, $getTarget) )
@@ -20,7 +18,6 @@
 				throw(new Exception("Getting value from an undefined property '{$name}'."));
 		}
 		public function __set($name, $value) {
-
 			$getTarget = self::$_getPrefix.$name;
 			$setTarget = self::$_setPrefix.$name;
 			if(method_exists($this, $setTarget))
@@ -32,12 +29,11 @@
 				throw(new Exception("Setting value to an undefined property '{$name}'."));
 		}
 		public function __get_class() {
-
 			return get_class($this);
 		}
 		
 
-
+/*
 		protected function __get_caller() {
 			if ( !DEBUG_BACKTRACE_ENABLED ) return NULL;
 			DEBUG_WARNING( "PBObject::caller is designed for debugging! It can be harmful to your system performance" );
@@ -47,8 +43,7 @@
 
 			$backtrace = array();
 			$item = array_shift($tempBacktrace);
-			while( $item !== NULL)
-			{
+			while( $item !== NULL) {
 				$backtrace[] = $item;
 				if("{$item['function']}" == '__get' || "{$item['function']}" == '__set')
 				{
@@ -70,4 +65,5 @@
 			else
 				return $backtrace[1];
 		}
+*/
 	}

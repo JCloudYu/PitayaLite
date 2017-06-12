@@ -1,13 +1,4 @@
 <?php
-	/*
-	 * File: PBLinkedList.php
-	 * Created by Cloud.
-	 * DateTime: 13/4/4 PM8:52
-	 *
-	 * [QUEUE] TAIL ▌▌▌▌▌▌▌▌▌▌▌▌▌▌▌▌ HEAD
-	 * [STACK] TOP  ▌▌▌▌▌▌▌▌▌▌▌▌▌▌▌▌ BOT
-	 */
-
 	class PBLinkedList extends PBObject {
 	
 		private $_head = NULL, $_tail = NULL, $_curr = NULL;

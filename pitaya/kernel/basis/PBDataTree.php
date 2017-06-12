@@ -65,7 +65,6 @@
 			return isset($this->{$name});
 		}
 	}
-	
 	function PBDataTree(stdClass $anchorObj = NULL) {
 		return new PBDataTree($anchorObj);
 	}
