@@ -24,17 +24,7 @@
 				echo "<div class='debugOpt' style='background-color:#fefe00; z-index:9999; border:solid red; margin-bottom:10px; padding:5px; word-break:break-all; width:{$width}px; color:#000; position:relative;'>";
 			}
 			
-			if (IS_CLI_ENV) {
-				$indentSpace = "\t";
-				$newLine = LF;
-			}
-			else {
-				$indentSpace = "&nbsp;&nbsp;&nbsp;&nbsp;";
-				$newLine = BR;
-			}
-
-
-
+			$newLine = IS_CLI_ENV ? LF : BR;
 			if ( DEBUG_BACKTRACE_ENABLED ) {
 				$info = self::BackTrace();
 				if ( (array_key_exists('class', $info[1]) && $info[1]['class'] == __CLASS__) && (preg_match('/^VarDump.*/', $info[1]['function']) > 0) ) {
@@ -55,47 +45,26 @@
 				if ( IS_HTTP_ENV ) echo '<div>';
 				echo "{$info['file']}:{$info['line']}";
 				if ( IS_HTTP_ENV ) echo '</div>';
-				echo $newLine;
 			}
 			
 
 
-			$indent = -1;
 			foreach ( $args as $arg ) {
-				if ( $indent >= 0 ) {
-					echo $newLine;
+				echo $newLine;
+				if ( IS_HTTP_ENV ) {
+					echo "<pre style='margin:0; tab-size:2;'>";
 				}
-
-				$indent = 0;
-				foreach(explode("\n", var_export($arg, TRUE)) as $chunk) {
-					$chunk = trim($chunk);
-
-					if ( preg_match('/.*\($/', $chunk) ) {
-						$tmp = explode(' ', $chunk);
-
-						foreach($tmp as $tmpItem) {
-							for($i=0; $i<$indent; $i++) echo $indentSpace;
-
-							echo $tmpItem.$newLine;
-						}
-						$indent++;
-					}
-					else {
-						if(preg_match('/^\).*/', $chunk)) {
-							$indent--;
-						}
-
-						for($i=0; $i<$indent; $i++) echo $indentSpace;
-						echo $chunk.$newLine;
-					}
+				
+				echo @json_encode($arg, JSON_PRETTY_PRINT);
+				
+				if ( IS_HTTP_ENV ) {
+					echo "</pre>";
 				}
 			}
 
-			if (IS_HTTP_ENV) echo '</div>';
-			$content = ob_get_clean();
-			echo $content;
+			if ( IS_HTTP_ENV ) echo '</div>';
+			ob_end_flush();
 		}
-		
 		private static function BackTrace($args = 0) {
 			$info = debug_backtrace($args);
 			$depth = count($info);
