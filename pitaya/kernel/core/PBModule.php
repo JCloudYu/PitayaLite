@@ -54,7 +54,7 @@
 		public function __get_class_lower() {
 			return strtolower(get_class($this));
 		}
-		public function __get_class_uppper() {
+		public function __get_class_upper() {
 			return strtoupper(get_class($this));
 		}
 		

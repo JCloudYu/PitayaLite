@@ -275,11 +275,11 @@
 
 			$state = $state || file_exists( path( "broot.main.main" ) . ".php" );
 			if ($state) {
-				$this->_entryBasis = $service;
+				$this->_entryBasis = 'main';
 
-				define( 'WORKING_ROOT', PBKernel::$_cacheServicePath."/{$this->_entryBasis}" );
+				define( 'WORKING_ROOT', PBKernel::$_cacheServicePath . "/main" );
 
-				$GLOBALS['service'] = $service;
+				$GLOBALS['service'] = 'main';
 				$GLOBALS['request'] = $processReq( $moduleRequest, $attributes );
 				return;
 			}
@@ -348,8 +348,6 @@
 			$moduleSearchPaths   = [];
 			$moduleSearchPaths[] = "basis.";
 			$moduleSearchPaths[] = "modules.";
-			$moduleSearchPaths[] = "data.modules.";
-			$moduleSearchPaths[] = "share.modules.";
 			$moduleSearchPaths[] = ""; // Use global identifier
 
 			if ( defined("MODULE_PATH") )

@@ -1,5 +1,5 @@
 <?php
-	using( 'sys.tool.PBHTML' );
+	using( 'tool.PBHTML' );
 
 	class PBHttpOut extends PBModule {
 		protected static $_statusCode = NULL;

@@ -1,5 +1,5 @@
 <?php
-	using('sys.tool.PBStreaming');
+	using('tool.PBStreaming');
 
 	class PBFileRequest extends PBModule
 	{

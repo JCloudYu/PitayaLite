@@ -160,8 +160,8 @@
 		private $_mainModuleId = NULL;
 		public function attachMainService( $entryModule, $initData = NULL ) {
 	
-			if ( defined('LEADING_MODULE') ) {
-				$moduleNames = (is_array(LEADING_MODULE) ? LEADING_MODULE : [ LEADING_MODULE ]);
+			if ( defined('LEADING_MODULES') ) {
+				$moduleNames = (is_array(LEADING_MODULES) ? LEADING_MODULES : [ LEADING_MODULES ]);
 				foreach( $moduleNames as $moduleName ) {
 					$module = PBModule( $moduleName, TRUE );
 					$moduleId = $module->id;
@@ -183,8 +183,8 @@
 	
 	
 	
-			if ( defined('TAILING_MODULE') ) {
-				$moduleNames = (is_array(TAILING_MODULE) ? TAILING_MODULE : [ TAILING_MODULE ]);
+			if ( defined('TAILING_MODULES') ) {
+				$moduleNames = (is_array(TAILING_MODULES) ? TAILING_MODULES : [ TAILING_MODULES ]);
 				foreach( $moduleNames as $moduleName ) {
 					$module = PBModule( $moduleName, TRUE );
 					$moduleId = $module->id;

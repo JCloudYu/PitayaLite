@@ -1,5 +1,5 @@
 <?php
-	using( 'sys.tool.PBScriptCtrl' );
+	using( 'tool.PBScriptCtrl' );
 
 	final class PBLocale extends PBObject implements ArrayAccess {
 		public static function Locale() {
