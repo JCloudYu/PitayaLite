@@ -1,6 +1,4 @@
 <?php
-	using( 'tool.PBScriptCtrl' );
-
 	final class PBLocale extends PBObject implements ArrayAccess {
 		public static function Locale() {
 			/** @var PBLocale $__locale_singleton */
