@@ -1,14 +1,14 @@
 <?php
-	define( 'PITAYA_BOOT_TIME',		time() - ((microtime( TRUE ) - PITAYA_METRIC_BOOT_TIME) | 0) );
-	define( 'PITAYA_ZONE_DIFF',		date( 'Z' ) | 0 );
-	define( 'PITAYA_BOOT_TIMEZONE', date_default_timezone_get() );
-	
 	define( 'DEBUG_BACKTRACE_ENABLED', function_exists( "debug_backtrace" ) );
-	define( 'REQUESTING_METHOD', IS_CLI_ENV ? '' : strtoupper($_SERVER['REQUEST_METHOD']) );
-	if ( IS_HTTP_ENV ) {
+	
+	if ( IS_CLI_ENV ) {
+		define( 'REQUESTING_METHOD', '' );
+	}
+	else {
+		define( 'REQUESTING_METHOD', strtoupper($_SERVER['REQUEST_METHOD']) );
 		$_SERVER['argv'] = []; $_SERVER['argc'] = 0;
 	}
-
+	
 
 
 	final class DEBUG {

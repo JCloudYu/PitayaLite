@@ -24,11 +24,3 @@
 
 	PBKernel::__imprint_constants();
 	PBRequest::__imprint_constants();
-
-	// INFO: Clean up everything
-	unset($GLOBALS[ 'extPath'] );
-	unset($GLOBALS[ 'RUNTIME_ENV'] );
-	unset($GLOBALS[ 'RUNTIME_CONF'] );
-	unset($GLOBALS[ 'RUNTIME_ARGC'] );
-	unset($GLOBALS[ 'RUNTIME_ARGV'] );
-	unset($GLOBALS[ 'STANDALONE_EXEC'] );

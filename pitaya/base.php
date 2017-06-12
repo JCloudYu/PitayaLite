@@ -1,5 +1,7 @@
 <?php
-	define( 'PITAYA_METRIC_BOOT_TIME',		microtime( TRUE ) );
+	define( 'PITAYA_METRIC_BOOT_TIME',	microtime( TRUE ) );
+	define( 'PITAYA_BOOT_TIME',			PITAYA_METRIC_BOOT_TIME|0 );
+	
 	s_define( 'DEBUG_MODE', FALSE, TRUE );
 
 

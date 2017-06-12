@@ -20,6 +20,7 @@
 	}
 	$pitayaRootPath = realpath($pitayaRootPath);
 	define( 'PITAYA_ROOT', $pitayaRootPath );
+	unset($pitayaRootPath);
 	
 	
 	
