@@ -50,9 +50,8 @@
 			
 			
 			$this->_curLocale = $localeName;
-			$locale	= PBScriptCtrl::Imprint( $localePath );
-			$locale	= array_key_exists( 'locale', $locale ) ? $locale['locale'] : [];
-			$this->_storedLocales[$this->_curLocale] = $locale;
+			$locale	= self::Imprint( $localePath );
+			$this->_storedLocales[$this->_curLocale] = is_array($locale) ? $locale : [];
 		}
 
 
@@ -77,28 +76,10 @@
 			return strtr($offset, @$this->_storedLocales[$this->_curLocale] ?: []);
 		}
 		
-		
-		
-		// region [ Deprecated ]
-		private static $_sharedBasePackage = NULL;
-		public static function basePackage($packagePath = NULL) {
-			DEPRECATION_WARNING( "PBLocale::basePackage api is marked as deprecated!" );
-			self::$_sharedBasePackage = "{$packagePath}";
+		private static function Imprint( $path ) {
+			$locale = []; require $path; return @$locale;
 		}
-		
-		private $_basePackage = '';
-		public function __get_basePackage() {
-			DEPRECATION_WARNING( "PBLocale::basePackage property is marked as deprecated! Please refer to PBLocale::package property!" );
-			return $this->_basePackage;
-		}
-		public function __set_basePackage($value) {
-			DEPRECATION_WARNING( "PBLocale::basePackage property is marked as deprecated! Please refer to PBLocale::package property!" );
-			$this->_basePackage = "{$value}";
-			$this->_localeLibPath = path( $this->_basePackage );
-		}
-		// endregion
 	}
-	
 	function PBLocale(){
 		static $_singleton = NULL;
 		if ( $_singleton === NULL ) {
