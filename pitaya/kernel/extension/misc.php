@@ -87,6 +87,28 @@
 	// endregion
 	
 	// region [ Array Function ]
+	function ____array_has_next($ary) {
+		return next($ary) !== FALSE;
+	}
+	function ____array_has_prev($ary) {
+		return prev($ary) !== FALSE;
+	}
+	function array_next(&$ary) {
+		if ( ____array_has_next($ary) ) {
+			next($ary);
+			return TRUE;
+		}
+		
+		return FALSE;
+	}
+	function array_prev(&$ary) {
+		if ( ____array_has_prev($ary) ) {
+			prev($ary);
+			return TRUE;
+		}
+		
+		return FALSE;
+	}
 	function is_assoc($array,  $allowEmpty = FALSE) {
 		if ( !is_array($array) ) return FALSE;
 		return (empty($array) && $allowEmpty) || (array_keys($array) !== range(0, count($array) - 1));

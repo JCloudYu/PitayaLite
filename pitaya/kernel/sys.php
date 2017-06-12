@@ -8,17 +8,11 @@
 	
 		// region [ Boot Related ]
 		private static $_cacheServicePath	= NULL;
-		private static $_cachedRuntimeAttr	= NULL;
-
 		public static function __imprint_constants() {
 			static $initialized = FALSE;
-
-			if($initialized) return;
+			if ( $initialized ) return;
 
 			PBKernel::$_cacheServicePath  = BASIS_ROOT;
-			PBKernel::$_cachedRuntimeAttr = array(
-				'standalone' => @$GLOBALS['STANDALONE_EXEC']
-			);
 		}
 		
 		/** @var PBKernel */
@@ -177,7 +171,6 @@
 		}
 		
 		private $_entryBasis		= NULL;
-		private $_entryBasisParam	= NULL;
 		private function __judgeMainService( $argv = NULL ) {
 			$service = $attributes = $fragment = '';
 			$moduleRequest = [];
@@ -290,17 +283,17 @@
 		// endregion
 
 		// region [ Process Control ]
-		/** @var PBProcess */
+		/** @var PBProc */
 		private $_process = NULL;
 		private function __forkProcess($service) {
 			if ( $this->_process ) return;
 			
 			
 			
-			$this->_process = new PBProcess( $this );
+			$this->_process = PBProc( $this );
 
 			chdir( WORKING_ROOT );
-			$this->_process->attachMainService($service, $this->_entryBasisParam);
+			$this->_process->prepareQueue($service);
 		}
 		// endregion
 		
@@ -446,5 +439,12 @@
 		
 		public function acquireModule($moduleName, $reuse = FALSE) {
 			return call_user_func_array([ $this->_relatedSys, "acquireModule" ], func_get_args());
+		}
+		
+		public function addSearchPath( $package ) {
+			return $this->_relatedSys->addModuleSearchPath( $package );
+		}
+		public function removeSearchPath( $package ) {
+			return $this->_relatedSys->removeModuleSearchPath( $package );
 		}
 	}
