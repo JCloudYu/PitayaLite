@@ -1,7 +1,7 @@
 <?php
 	final class main_b extends PBModule {
 		public function execute($chainData) {
-			DEBUG::VarDump( $this->class_upper );
+			DEBUG::VarDump( $this->class );
 		}
 	}
 	
