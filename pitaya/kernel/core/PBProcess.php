@@ -3,7 +3,6 @@
 		/** @var PBKernel */
 		private $_system = NULL;
 		
-		/** @var array */
 		private $_bootSequence	= [];
 		private $_dupSequence	= [];
 		private $_entryModule	= NULL;
@@ -41,7 +40,7 @@
 			
 			$this->_executing = FALSE;
 		}
-		public function prepareQueue($entryModule ) {
+		public function prepareQueue($entryModule) {
 			if ( defined('LEADING_MODULES') ) {
 				$moduleNames = (is_array(LEADING_MODULES) ? LEADING_MODULES : [ LEADING_MODULES ]);
 				foreach( $moduleNames as $moduleName ) {
@@ -159,7 +158,7 @@
 			}
 		}
 	}
-	function PBProc( $kernelRef ) {
+	function PBProc( $kernelRef = NULL ) {
 		static $_singleton = NULL;
 		if ( $_singleton === NULL ) {
 			$_singleton = new PBProc( $kernelRef );

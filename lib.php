@@ -1,9 +1,15 @@
 <?php
-	if ( IS_WIN_ENV && !class_exists( 'COM' ) ) {
-		die( "COM extension is required in WindowsEnvironment! ( php_com_dotnet.dll )" );
+	define( 'IS_COM_SUPPORTED', class_exists( 'COM' ) );
+
+	if ( IS_WIN_ENV && !IS_COM_SUPPORTED ) {
+		error_log( "COM extension ( php_com_dotnet.dll ) is not enabled! Some features will not be active!" );
 	}
 
 	function resolve_lnk($lnkPath) {
+		if ( !IS_COM_SUPPORTED ) {
+			return $lnkPath;
+		}
+		
 		$lnkPath  = realpath($lnkPath);
 		$shell = new COM('WScript.Shell');
 		$shortcut = $shell->createshortcut($lnkPath);
