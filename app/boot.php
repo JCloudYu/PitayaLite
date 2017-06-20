@@ -1,14 +1,8 @@
 <?php
-	const PACKAGES = [
-		'data' => SPACE_ROOT . '/data'
-	];
+	PBProc::LEADING_MODULES([
+		'global_init'
+	]);
 	
-	const LEADING_MODULES = [
-		'ext.modules.global_init'
-	];
-	
-	const TAILING_MODULES = [
-		
-	];
-
-	using( 'ext.*' );
+	PBProc::TAILING_MODULES([
+		'tailing_cleanup'
+	]);

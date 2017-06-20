@@ -1,5 +1,5 @@
 <?php
-	final class global_init extends PBModule {
+	final class tailing_cleanup extends PBModule {
 		public function execute($chainData) {
 			DEBUG::VarDump(__CLASS__);
 		}
