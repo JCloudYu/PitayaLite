@@ -1,9 +1,19 @@
 <?php
-	using( 'sys.process.*' );
-	using( 'sys.net.PBUploadedFile' );
+	final class PBUploadedFile {
+		const ERROR_OK					= UPLOAD_ERR_OK;
+		const ERROR_INI_SIZE			= UPLOAD_ERR_INI_SIZE;
+		const ERROR_FORM_SIZE			= UPLOAD_ERR_FORM_SIZE;
+		const ERROR_PARTIAL				= UPLOAD_ERR_PARTIAL;
+		const ERROR_NO_FILE				= UPLOAD_ERR_NO_FILE;
+		const ERROR_NO_TMP_DIR			= UPLOAD_ERR_NO_TMP_DIR;
+		const ERROR_CANT_WRITE			= UPLOAD_ERR_CANT_WRITE;
+		const ERROR_EXTENSION			= UPLOAD_ERR_EXTENSION;
+		const ERROR_GENERATED			= 1000;
+		const ERROR_CANT_PROC_MOVE		= 1001;
+		const ERROR_INVALID_TARGET_PATH	= 1002;
+	}
 	
-	final class PBFileUploadHandler extends PBModule
-	{
+	final class PBFileUploadHandler extends PBModule {
 		const UPLOAD_PROC_NOOP				=  0;
 		const UPLOAD_PROC_MD5_CHECKSUM		=  1;
 		const UPLOAD_PROC_SHA1_CHECKSUM		=  2;
@@ -86,13 +96,13 @@
 
 
 
-			$processed = data_filter( $targetFields, function( $item, &$fieldName ) use ( &$autoDir, &$uploadedFiles, &$purgeError, &$storagePath, &$procFlag, &$procFunc, &$preprocFunc )
+			$processed = ary_filter( $targetFields, function( $item, &$fieldName ) use ( &$autoDir, &$uploadedFiles, &$purgeError, &$storagePath, &$procFlag, &$procFunc, &$preprocFunc )
 			{
 				if ( empty($item) || !@is_array($uploadedFiles[$item]) ) return NULL;
 
 				$fieldName = $item;
 
-				return data_filter( $uploadedFiles[$item], function( $info, $idx ) use ( &$autoDir, &$purgeError, &$storagePath, &$procFlag, &$procFunc, &$preprocFunc )
+				return ary_filter( $uploadedFiles[$item], function( $info, $idx ) use ( &$autoDir, &$purgeError, &$storagePath, &$procFlag, &$procFunc, &$preprocFunc )
 				{
 					$fileInfo = [
 						'name'		=> $info['name'],
@@ -162,17 +172,17 @@
 					
 					
 						if ( !is_dir( $storagePath ) )
-							$fileInfo[ 'error' ] = PBUpadedFile::ERROR_INVALID_TARGET_PATH;
+							$fileInfo[ 'error' ] = PBUploadedFile::ERROR_INVALID_TARGET_PATH;
 
 						if ( !is_uploaded_file( $info['tmp_name'] ) )
-							$fileInfo[ 'error' ] = PBUpadedFile::ERROR_GENERATED;
+							$fileInfo[ 'error' ] = PBUploadedFile::ERROR_GENERATED;
 
 						$baseName	= empty($overwrites[ 'storageName' ]) ? $token : $overwrites[ 'storageName' ]; 
 						$dstPath	= "{$storagePath}/{$baseName}";
 						$result		= @move_uploaded_file( $info['tmp_name'], $dstPath );
 
 						if ( empty($result) )
-							$fileInfo[ 'error' ] = PBUpadedFile::ERROR_CANT_PROC_MOVE;
+							$fileInfo[ 'error' ] = PBUploadedFile::ERROR_CANT_PROC_MOVE;
 						else
 						{
 							unset( $fileInfo['tmpPath'] );

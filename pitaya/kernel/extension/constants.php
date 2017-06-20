@@ -3,9 +3,9 @@
 	define( 'MINUTE_SEC',	60 );
 	define( 'HOUR_SEC',		60 * MINUTE_SEC );
 	define( 'DAY_SEC',		24 * HOUR_SEC );
-	define( 'WEEK_SEC',		 7 * DAY_SEC );
-	define( 'MONTH_SEC',	30 * DAY_SEC );
-	define( 'YEAR_SEC',    365 * DAY_SEC );
+	define( 'WEEK_SEC',		  7 * DAY_SEC );
+	define( 'MONTH_SEC',	 30 * DAY_SEC );
+	define( 'YEAR_SEC',		365 * DAY_SEC );
 
 	// INFO: Digital Sizes
 	define( 'KB', 	   1024.0 );	// KiloByte
@@ -21,10 +21,3 @@
 	s_define('DEG2RAD',	0.017453292519943, 					TRUE);
 	s_define('RAD2DEG',	57.29577951412932, 					TRUE);
 	s_define('PI',		3.141592653589793238462643383279, 	TRUE);
-	
-	// INFO: Misc
-	define( 'LF',	"\n" );
-	define( 'CR',	"\r" );
-	define( 'CRLF',	"\r\n" );
-	define( 'BR',	'<br>' );
-	define( 'EOL', IS_CLI_ENV ? LF : BR );

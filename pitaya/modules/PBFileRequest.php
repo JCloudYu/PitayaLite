@@ -6,7 +6,7 @@
 		public function __construct() {
 			if ( empty(self::$_acceptableExt) )
 			{
-				self::$_acceptableExt = data_filter(
+				self::$_acceptableExt = ary_filter(
 					json_decode(file_get_contents(path("defaults", "extension-map.json")), TRUE),
 					function( $item, &$idx ){ $idx = strtolower($idx); return $item; }
 				);
@@ -53,7 +53,7 @@
 		
 
 			$extensionMap = self::$_acceptableExt;
-			data_filter( $this->_custExtensionMap, function( $item, $idx ) use( &$extensionMap ) {
+			ary_filter( $this->_custExtensionMap, function( $item, $idx ) use( &$extensionMap ) {
 				$idx = strtolower( "{$idx}" );
 				$extensionMap[ $idx ] = $item;
 			});
@@ -76,12 +76,12 @@
 
 
 			// INFO: Path validation
-			$workingRoot = WORKING_ROOT;
 			$searchPath = $this->_relPath;
+			$workingRoot = path( 'basis' );
 			array_unshift( $searchPath, $workingRoot );
 
 			$filePath = NULL; $targetPath = $this->_targetPath;
-			data_filter( $searchPath, function( $pathDir ) use( $targetPath, &$filePath ) {
+			ary_filter( $searchPath, function( $pathDir ) use( $targetPath, &$filePath ) {
 				if ( $filePath !== NULL ) return;
 
 				$path = "{$pathDir}/{$targetPath}";
@@ -157,7 +157,6 @@
 
 			exit(0);
 		}
-
 		public function multiRanges($filePath, $ranges)
 		{
 			$fileSize = filesize($filePath);
@@ -235,7 +234,6 @@
 			fclose($fileStream);
 			fclose($outStream);
 		}
-
 		public function singleRange($filePath, $ranges)
 		{
 			$fileSize = filesize($filePath);

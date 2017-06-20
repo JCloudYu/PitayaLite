@@ -1,5 +1,5 @@
 <?php
-	class PBStdIO {
+	final class PBStdIO {
 		public static function READ($msg = "", $isPassword = FALSE, $stars = FALSE) {
 		
 			if ( !empty($msg) ) fwrite(STDOUT, "{$msg}");

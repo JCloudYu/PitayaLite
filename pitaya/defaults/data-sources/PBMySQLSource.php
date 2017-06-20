@@ -1,6 +1,4 @@
 <?php
-	using( 'sys.db.ExtPDO' );
-
 	final class PBMySQLSource extends PBIDataSource {
 	
 		private $_pdoConnection = NULL;

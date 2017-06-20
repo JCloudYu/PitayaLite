@@ -37,7 +37,7 @@
 			if ( $_initialized ) return $this; $_initialized = TRUE;
 
 
-			
+			$G_CONF = PBStaticConf( 'pitaya-env' );
 
 			
 			// store all environmental configurations
@@ -48,7 +48,6 @@
 			$this->_incomingRecord['request']['method']			= REQUESTING_METHOD;
 			$this->_incomingRecord['request']['query']			= @$GLOBALS['request'];
 			$this->_incomingRecord['request']['data']			= NULL;
-			$this->_incomingRecord['request']['service']		= @$GLOBALS['service'];
 			$this->_incomingRecord['request']['files']			= @$_FILES;
 			$this->_incomingRecord['request']['post']			= $_POST;
 			$this->_incomingRecord['request']['get']			= $_GET;
@@ -58,7 +57,7 @@
 			$this->_incomingRecord['environment']['env']		= $_ENV;
 			$this->_incomingRecord['environment']['server']		= $_SERVER;
 			$this->_incomingRecord['environment']['attachment']	= [
-				'level'  => ENV_ATTACH_LEVEL,
+				'level'  =>	$G_CONF[ 'attach-depth' ],
 				'anchor' => @$GLOBALS[ 'attachPoint' ] ?: []
 			];
 
@@ -66,7 +65,6 @@
 
 			// unset all global variables
 			unset($GLOBALS['rawRequest']);
-			unset($GLOBALS['service']);
 			unset($GLOBALS['request']);
 			unset($GLOBALS['attachPoint']);
 			
@@ -174,9 +172,6 @@
 			if ( $_headers !== NULL ) return $_headers;
 			
 			return ( $_headers = self::GetIncomingHeaders() );
-		}
-		public function __get_service() {
-			return $this->_incomingRecord['request']['service'];
 		}
 		public function __get_query() {
 			return $this->_parsedQuery ?: $this->_incomingRecord['request']['query'];
@@ -334,7 +329,7 @@
 			$res = @$res[ 'resource' ];
 			if ( !is_array($res) ) $res = [];
 			
-			array_unshift($res, SESSION_BASIS);
+			array_unshift($res, PBProc()->entryModule->class);
 			array_unshift($anchor, '');
 			return (new ____pitaya_base_object__path_mapper_tracable( array_merge($anchor, $res), count($anchor)-1 ))->trace( $trace );
 		}
@@ -413,7 +408,7 @@
 		}
 		public static function ParseContentType( $contentType ) {
 			$typeInfo = [];
-			data_filter( explode(';', "{$contentType}"), function( $item, &$idx ) use( &$typeInfo ) {
+			ary_filter( explode(';', "{$contentType}"), function( $item, &$idx ) use( &$typeInfo ) {
 			
 				$token = trim( $item );
 				
@@ -453,20 +448,6 @@
 		
 
 		public function data($name, $type = 'raw', $default = NULL, $varSrc = 'all') {
-			
-			$CUSTOM_CAST = FALSE;
-		
-			// INFO: Legacy Mode ( where type is an array )
-			// INFO: PBRequest::Request()->data( name, [ type, {{additional,} default} ], src );
-			if ( is_array( $type ) )
-			{
-				DEPRECATION_WARNING( "Legacy mode is invoked! Second argument will no longer accept arrays!" );
-				
-				$varSrc = $default;
-				$default = NULL;
-				$CUSTOM_CAST = TRUE;
-			}
-		
 			$hasData = FALSE; $value = NULL;
 			switch( strtolower($varSrc) )
 			{
@@ -495,20 +476,7 @@
 					break;
 			}
 
-
-
-
-
-
-			if ( !$CUSTOM_CAST ) {
-				return ($hasData) ? CAST( $value, $type, $default ) : $default;
-			}
-			
-			
-			
-			$args = array_values( $type );
-			array_unshift( $args, $value );
-			return call_user_func_array( 'CAST', $args );
+			return ($hasData) ? CAST( $value, $type, $default ) : $default;
 		}
 		private static function ___dataItr( $data, $path, &$hasData = TRUE ) {
 			$path = explode( '.', "{$path}" );
@@ -586,7 +554,7 @@
 			$queryFlag 		= $this->_queryFlag;
 
 			$filtered = array();
-			data_filter( $fields, function( $item ) use( &$filtered, &$filterFunc, $queryFlag, $queryVariable )
+			ary_filter( $fields, function( $item ) use( &$filtered, &$filterFunc, $queryFlag, $queryVariable )
 			{
 				$encodedKey = urlencode( $item );
 
@@ -632,7 +600,7 @@
 
 
 			$request = array(
-				'resource'	=> data_filter( empty($resource) ? array() : explode( '/', $resource ), function( $item ) {
+				'resource'	=> ary_filter( empty($resource) ? array() : explode( '/', $resource ), function( $item ) {
 					return urldecode( $item );
 				}),
 				'attribute'	=> PBRequest::ParseQueryAttributes( $attributes, TRUE )
@@ -736,7 +704,7 @@
 				if (substr( $header_name, 0, 5 ) !== 'HTTP_') continue;
 
 				$header_name = explode( '_', strtolower(substr( $header_name, 5 )));
-				$header_name = implode( '-', data_filter( $header_name, function( $word ){ return ucfirst($word); } ) );
+				$header_name = implode( '-', ary_filter( $header_name, function( $word ){ return ucfirst($word); } ) );
 				$_incomingHeaders[ $header_name ] = $val;
 			}
 			
@@ -821,76 +789,6 @@
 				'variable'	=> $data['attribute']['variable'],
 				'flag'		=> $data['attribute']['flag']
 			];
-		}
-		// endregion
-		
-		// region [ Deprecated ]
-		public function __get_all() {
-			DEPRECATION_WARNING( "PBRequest::all property is marked as deprecated and will be removed in the following versions soon!" );
-			return $this->_incomingRecord;
-		}
-		public function __get_method_upper(){
-			DEPRECATION_WARNING( "PBRequest::method_upper property is marked as deprecated and will be removed in the following versions soon!" );
-			return strtoupper( "{$this->_incomingRecord['request']['method']}" );
-		}
-		public function __get_method_lower(){
-			DEPRECATION_WARNING( "PBRequest::method_lower property is marked as deprecated and will be removed in the following versions soon!" );
-			return strtolower( "{$this->_incomingRecord['request']['method']}" );
-		}
-		public function __get_request() {
-			DEPRECATION_WARNING( "PBRequest::all property is marked as deprecated and will be removed in the following versions soon!" );
-			return $this->_incomingRecord['request'];
-		}
-		public function __get_cookie() {
-			DEPRECATION_WARNING( "PBRequest::cookie property is marked as deprecated and will be removed in the following versions soon!" );
-			return $this->_incomingRecord['environment']['cookie'];
-		}
-		public function __get_session() {
-			DEPRECATION_WARNING( "PBRequest::session property is marked as deprecated and will be removed in the following versions soon!" );
-			return $this->_incomingRecord['environment']['session'];
-		}
-		public function __get_argc() {
-			DEPRECATION_WARNING( "PBRequest::argc property is marked as deprecated and will be removed in the following versions soon!" );
-			return $this->_incomingRecord['command']['argc'];
-		}	
-		public function __get_httpHost() {
-			DEPRECATION_WARNING( "PBRequest::httpHost property is marked as deprecated and will be removed in the following versions soon!" );
-			return  @"{$this->server[ 'HTTP_HOST' ]}";
-		}
-		public function __get_remoteIP() {
-			DEPRECATION_WARNING( "PBRequest::remoteIP property is marked as deprecated and will be removed in the following versions soon!" );
-			return @$this->_incomingRecord['environment']['server']['REMOTE_ADDR'];
-		}
-		public function __get_nativeGet(){
-			DEPRECATION_WARNING( "PBRequest::nativeGet property is marked as deprecated and will be removed in the following versions soon!" );
-			return $this->_incomingRecord['request']['get'];
-		}
-		public function __get_nativePost(){
-			DEPRECATION_WARNING( "PBRequest::nativePost property is marked as deprecated and will be removed in the following versions soon!" );
-			return $this->_incomingRecord['request']['post'];
-		}
-		public function __get_nativeFiles(){
-			DEPRECATION_WARNING( "PBRequest::nativeFiles property is marked as deprecated and will be removed in the following versions soon!" );
-			return $this->_incomingRecord['request']['files'];
-		}
-		public function __get_nativeEnv(){
-			DEPRECATION_WARNING( "PBRequest::nativeEnv property is marked as deprecated and will be removed in the following versions soon!" );
-			return $this->_incomingRecord['environment']['env'];
-		}
-		public function __get_nativeServer(){
-			DEPRECATION_WARNING( "PBRequest::nativeServer property is marked as deprecated and will be removed in the following versions soon!" );
-			return $this->_incomingRecord['environment']['server'];
-		}
-		
-		public function post(...$args) {
-			DEPRECATION_WARNING( "PBRequest::post method is marked as deprecated and will be removed in the following versions soon!" );
-			$args[] = 'post';
-			return $this->data(...$args);
-		}
-		public function get(...$args) {
-			DEPRECATION_WARNING( "PBRequest::get method is marked as deprecated and will be removed in the following versions soon!" );
-			$args[] = 'get';
-			return $this->data(...$args);
 		}
 		// endregion
 	}
@@ -988,13 +886,13 @@
 
 			if ( empty($acceptOrigin) || empty($acceptHeaders) ) {
 				PBHTTP::ResponseStatus( PBHTTP::STATUS_403_FORBIDDEN );
-				if ( !$continue ) exit(0);
+				if ( !$continue ) Termination::NORMALLY();
 				
 				return $status;
 			}
 			if ( empty($acceptMethod) ) {
 				PBHTTP::ResponseStatus( PBHTTP::STATUS_405_METHOD_NOT_ALLOWED );
-				if ( !$continue ) exit(0);
+				if ( !$continue ) Termination::NORMALLY();
 				
 				return $status;
 			}
@@ -1004,7 +902,7 @@
 			
 			if ( in_array( REQUESTING_METHOD, [ 'OPTIONS', 'HEAD' ] ) ) {
 				PBHTTP::ResponseStatus(PBHTTP::STATUS_200_OK);
-				if ( !$continue ) exit(0);
+				if ( !$continue ) Termination::NORMALLY();
 			}
 			
 			return $status;

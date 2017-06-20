@@ -1,5 +1,5 @@
 <?php
-	// region [ Data processing ]
+	// region [ Fusion two data ]
 	function &data_fuse(&$data1, $data2, $overwrite = TRUE){
 		if ( !is_array($data1) && !is_object($data1) ) return $data1;
 		if ( !is_array($data2) && !is_object($data2) ) return $data1;
@@ -41,6 +41,9 @@
 		
 		return $destination;
 	}
+	// endregion
+	
+	// region [ Looping over data content ]
 	function data_filter( $traversable, $filter = NULL, $skipVal = FALSE )
 	{
 		if ( !is_array($traversable) && !is_object($traversable) && !($traversable instanceof Traversable) ) return FALSE;
@@ -69,51 +72,135 @@
 
 		return $collected;
 	}
+	function ary_filter() { return call_user_func_array( "data_filter", func_get_args() ); }
+	function object_filter() { return call_user_func_array( "data_filter", func_get_args() ); }
+	// endregion
+
+	// region [ JSON Processing ]
+	function pb_json_decode( $jsonString, ...$args ){
+		// search and remove comments like /* */ and //
+		$json = preg_replace('#(/\*([^*]|[\r\n]|(\*+([^*/]|[\r\n])))*\*+/)|([\s\t]//.*)|(^//.*)#', '', $jsonString);
+		array_unshift($args, $json);
+		return call_user_func_array( 'json_decode', $args );
+	}
+
+	function pb_json_encode( ...$args ){ 
+		return call_user_func_array( 'json_encode', $args );
+	}
 	// endregion
 
 	// region [ Hash Functions ]
 	function sha256( $content, $rawOutput = FALSE ) {
 		return hash( 'sha256', $content, $rawOutput );
 	}
+	
 	function sha256_file( $fileName, $rawOutput = FALSE ) {
 		return hash_file( 'sha256', $fileName, $rawOutput );
 	}
+	
 	function sha512( $content, $rawOutput = FALSE ) {
 		return hash( 'sha512', $content, $rawOutput );
 	}
+	
 	function sha512_file( $fileName, $rawOutput = FALSE ) {
 		return hash_file( 'sha512', $fileName, $rawOutput );
 	}
 	// endregion
 	
 	// region [ Array Function ]
-	function ____array_has_next($ary) {
-		return next($ary) !== FALSE;
-	}
-	function ____array_has_prev($ary) {
-		return prev($ary) !== FALSE;
-	}
-	function array_next(&$ary) {
-		if ( ____array_has_next($ary) ) {
-			next($ary);
-			return TRUE;
-		}
-		
-		return FALSE;
-	}
-	function array_prev(&$ary) {
-		if ( ____array_has_prev($ary) ) {
-			prev($ary);
-			return TRUE;
-		}
-		
-		return FALSE;
-	}
 	function is_assoc($array,  $allowEmpty = FALSE) {
 		if ( !is_array($array) ) return FALSE;
 		return (empty($array) && $allowEmpty) || (array_keys($array) !== range(0, count($array) - 1));
 	}
 	
+	define( 'IN_ARY_MODE_AND', 			0x01 );
+	define( 'IN_ARY_MODE_OR', 			0x00 );
+	define( 'IN_ARY_MODE_STRICT', 		0x02 );
+	define( 'IN_ARY_MODE_NONE_STRICT', 	0x00 );
+	function in_ary($needle, $candidates, $mode = IN_ARY_MODE_OR) {
+		if (!is_array($needle)) $needle = [ $needle ];
+
+
+		if (!is_int($mode)) $mode = 0;
+		$andMode 	= $mode & IN_ARY_MODE_AND;
+		$strictMode = $mode & IN_ARY_MODE_STRICT;
+
+		$state = (empty($andMode)) ? FALSE : TRUE;
+		foreach ($needle as $content)
+		{
+			if ($andMode)
+				$state = $state && in_array($content, $candidates, !empty($strictMode));
+			else
+				$state = $state || in_array($content, $candidates, !empty($strictMode));
+		}
+
+		return $state;
+	}
+	
+	function ary_fill($size, $element, $startIndex = 0) {
+		$rtAry = [];
+
+		for($i = 0; $i <$size; $i++, $startIndex++)
+			$rtAry[$startIndex] = $element;
+
+		return $rtAry;
+	}
+	function ary_exclude($src, $ref) {
+		if (!is_array($src)) return [];
+
+		$args = func_get_args();
+		array_shift($args);
+
+
+		$left = $src;
+		foreach ($args as $param)
+		{
+			if (!is_array($param)) continue;
+
+
+			$stayed = [];
+			foreach ($left as $src_content)
+			{
+				if (in_array($src_content, $param)) continue;
+				$stayed[] = $src_content;
+			}
+			$left = $stayed;
+		}
+
+		return $left;
+	}
+	function ary_flag($ary, $flag, $matchCase = TRUE, $compareMode = IN_ARY_MODE_OR) {
+		
+	
+		if (!is_array($ary)) $ary = [];
+		if (!is_array($flag)) $flag = [ $flag ];
+
+		if (!$matchCase)
+			foreach ($flag as $id => $content) $flag[$id] = trim(strtolower("{$content}"));
+
+
+		$candidates = [];
+		foreach ($ary as $idx => $item)
+		{
+			if (!preg_match('/^\d+$/', "{$idx}")) continue;
+			$candidates[] = trim(((!$matchCase) ? strtolower("{$item}") : "{$item}"));
+		}
+
+		return in_ary($flag, $candidates, $compareMode);
+	}
+	function ary_pick($ary, $indices) {
+		if (empty($indices) || (!is_array($indices) && !is_string($indices)))
+			return [];
+
+		$indices = (is_string($indices)) ? explode(',', $indices) : $indices;
+		$collected = [];
+		foreach ($indices as $idx) { $collected[] = $ary[$idx]; }
+
+		return $collected;
+	}
+	// endregion
+	
+	// region [ Numeric Detection ]
 	function EXPR_NUMERIC($val) {
 		return EXPR_INT($val) || EXPR_FLOAT_DOT($val) || EXPR_FLOAT_SCIENCE($val);
 	}
@@ -142,7 +229,7 @@
 	}
 	// endregion
 	
-	// region [ Content Casting ]
+	// region [ Type Casting ]
 	function CAST(...$args) {
 	
 		$value	 = @$args[0];
@@ -352,48 +439,5 @@
 			default:
 				return $value;
 		}
-	}
-	
-	class PBJSONCast {
-		public $data = NULL;
-		public function __construct( &$carriedData = NULL ) {
-			$this->data = $carriedData;
-		}
-		public function __invoke( $output = FALSE ) {
-			$outData = $this->data;
-			if (is_a($outData, 'PBJSONContainer')) {
-				$outData = $outData->safe_cast();
-			}
-			if ($output) {
-				echo json_encode($outData);
-				return;
-			}
-			
-			return json_encode($outData);
-		}
-		public function __toString() {
-			return $this(FALSE);
-		}
-	}
-	function PBJSONCast( $jsonData=NULL ) {
-		return new PBJSONCast($jsonData);
-	}
-	// endregion
-	
-	// region [ Shorthand Conversion ]
-	function stdClass($item = NULL, $force = FALSE) {
-		if ( func_num_args() == 0 ) {
-			return new stdClass();
-		}
-		else
-		if ( is_array($item) ) {
-			return (object)$item;
-		}
-		else
-		if ( is_a($item,stdClass::class) ) {
-			return $item;
-		}
-		
-		return $force ? new stdClass() : NULL;
 	}
 	// endregion

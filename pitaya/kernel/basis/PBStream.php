@@ -1,16 +1,14 @@
 <?php
 	final class PBStream extends PBObject {
-		private $_pipes = [];
-		public function __construct( $resource = NULL ) {
-			$this->tee( $resource );
-		}
+	
+		private $_pipes = array();
+		public function __construct( $resource = NULL ) { $this->tee( $resource ); }
 		
 		
 		
-		public function tee( $resource ) {
-			if ( $resource === NULL ) {
-				return NULL;
-			}
+		public function tee( $resource )
+		{
+			if ( $resource === NULL ) return NULL;
 
 			// Other PBStream object is feed
 			if ( is_a( $resource, "PBStream" ) )
@@ -35,7 +33,8 @@
 
 			return $this;
 		}
-		public function pop( $close = FALSE ) {
+		public function pop( $close = FALSE )
+		{
 			$stream = @array_pop($this->_pipes);
 
 			if ( $close )
@@ -48,7 +47,8 @@
 
 			return $stream;
 		}
-		public function shift( $close = FALSE ) {
+		public function shift( $close = FALSE )
+		{
 			$stream = @array_shift($this->_pipes);
 
 			if ( $close )
@@ -61,7 +61,8 @@
 
 			return $stream;
 		}
-		public function write( $string, $length = NULL ) {
+		public function write( $string, $length = NULL )
+		{
 			foreach ( $this->_pipes as $handle )
 			{
 				if ( !is_resource( $handle ) ) continue;
@@ -74,7 +75,8 @@
 
 			return $this;
 		}
-		public function flush() {
+		public function flush()
+		{
 			foreach ( $this->_pipes as $handle )
 			{
 				if ( !is_resource( $handle ) ) continue;
@@ -84,10 +86,13 @@
 			return $this;
 		}
 		
-		protected function __get_numBranches() {
+		
+		public function __get_numBranches()
+		{
 			return count($this->_pipes);
 		}
-		private function _attachStream( PBStream $resource ) {
+		private function _attachStream( PBStream $resource )
+		{
 			foreach ( $resource->_pipes as $handle )
 			{
 				if ( is_resource( $handle ) )
@@ -95,15 +100,18 @@
 			}
 
 		}
-		private function _attachPath( $path ) {
+		private function _attachPath( $path )
+		{
 			$handle = @fopen($path, $mode);
 			if ( $handle ) $this->_pipes[] = $handle;
 		}
-		private function _attachResource( $resource ) {
+		private function _attachResource( $resource )
+		{
 			if ( get_resource_type( $resource ) != "stream" ) return;
 			$this->_pipes[] = $resource;
 		}
-		private function _purgePipes() {
+		private function _purgePipes()
+		{
 			$newPipes = array();
 			foreach ( $this->_pipes as $idx => $handle )
 			{

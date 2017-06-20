@@ -1,4 +1,6 @@
 <?php
+ 	using( 'kernel.basis.PBObject' );
+ 
 	final class PBCrypto {
 		const CANDIDATES_LOWER_NO_SYM = "0123456789abcdefghijklmnopqrstuvwxyz";
 		const CANDIDATES_MIXED_NO_SYM = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -135,14 +137,17 @@
 		public static function URLEncode( $data ){
 			return strtr(rtrim(base64_encode( $data ), '='), '+/', '-_');
 		}
+
 		public static function URLDecode( $data ){
 			$length = strlen( $data );
 			$repeat = 4 - ($length % 4);
 			return base64_decode( strtr( $data . str_repeat( "=", $repeat ), '-_', '+/'), TRUE );
 		}
+
 		public static function Encode( $data ){
 			return base64_encode($data);
 		}
+
 		public static function Decode( $data ) {
 			return base64_decode( $data, TRUE );
 		}

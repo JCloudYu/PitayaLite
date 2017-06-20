@@ -20,10 +20,7 @@
 		
 		private $_curLocale 	= FALSE;
 		private $_storedLocales = [];
-		public function __construct() {
-			$this->_basePackage = self::$_sharedBasePackage;
-			$this->_localeLibPath = path($this->_basePackage);
-		}
+		public function __construct() { }
 
 
 
@@ -74,7 +71,9 @@
 			return strtr($offset, @$this->_storedLocales[$this->_curLocale] ?: []);
 		}
 		
-		private static function Imprint( $path ) {
+		
+		
+		private static function Imprint($path) {
 			$locale = []; require $path; return @$locale;
 		}
 	}

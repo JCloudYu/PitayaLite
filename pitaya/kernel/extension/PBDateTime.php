@@ -74,6 +74,7 @@
 			return $this->{$prop} = $value;
 		}
 	}
+	
 	function PBDateTime() {
 		return new PBDateTime();
 	}

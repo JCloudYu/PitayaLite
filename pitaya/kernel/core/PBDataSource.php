@@ -78,11 +78,7 @@
 	function PBDataSource($identifier = '', $DSURI = '', $options = array(), $driverOpt = array(), $FORCE_CREATE = FALSE) {
 		return PBDataSource::Source( $identifier, $DSURI, $options, $driverOpt, $FORCE_CREATE );
 	}
-
-
-
-	abstract class PBIDataSource extends PBObject
-	{
+	abstract class PBIDataSource extends PBObject {
 		abstract public function __get_source();
 
 
@@ -109,7 +105,7 @@
 				$URI[ $field ] = urldecode( "{$URI[$field]}" );
 
 			$URI[ 'path' ] = @substr( trim( "{$URI['path']}" ), 1 );
-			$URI[ 'path' ] = data_filter(
+			$URI[ 'path' ] = ary_filter(
 				( $URI[ 'path' ] !== ""  ? explode( '/', $URI['path'] ) : []),
 				function( $item ){ return urldecode($item); }
 			);

@@ -14,7 +14,15 @@
 		public function __construct( $sysInst ) {
 			$this->_system = $sysInst;
 		}
+		public function __get_entryModule() {
+			return $this->_entryModule;
+		}
+	
+	
 		
+	
+	
+	
 		
 		public function run() {
 			if ( $this->_executing ) return;
@@ -41,21 +49,27 @@
 			$this->_executing = FALSE;
 		}
 		public function prepareQueue($entryModule) {
-			if ( defined('LEADING_MODULES') ) {
-				$moduleNames = (is_array(LEADING_MODULES) ? LEADING_MODULES : [ LEADING_MODULES ]);
-				foreach( $moduleNames as $moduleName ) {
-					$module = PBModule( $moduleName, TRUE );
-					$this->_bootSequence[] = stdClass([
-						'id'	=> $module->id,
-						'pre'	=> FALSE
-					]);
-				}
+			$G_CONF = PBStaticConf( 'pitaya-env' );
+			
+			foreach( $G_CONF[ 'leading-modules' ] as $moduleName ) {
+				$module = PBModule( $moduleName, TRUE );
+				$this->_bootSequence[] = stdClass([
+					'id'	=> $module->id,
+					'pre'	=> FALSE
+				]);
+			}
+			foreach( self::$_LEADING_MODULES as $moduleName ) {
+				$module = PBModule( $moduleName, TRUE );
+				$this->_bootSequence[] = stdClass([
+					'id'	=> $module->id,
+					'pre'	=> FALSE
+				]);
 			}
 	
 	
 	
 			// NOTE: Service Entry Module
-			$this->_entryModule = PBModule( $entryModule, TRUE );
+			$this->_entryModule = PBModule($entryModule);
 			$this->_mainModuleId = $this->_entryModule->id;
 			$this->_bootSequence[] = stdClass([
 				'id'	=> $this->_mainModuleId,
@@ -64,16 +78,19 @@
 			
 	
 	
-	
-			if ( defined('TAILING_MODULES') ) {
-				$moduleNames = (is_array(TAILING_MODULES) ? TAILING_MODULES : [ TAILING_MODULES ]);
-				foreach( $moduleNames as $moduleName ) {
-					$module = PBModule( $moduleName, TRUE );
-					$this->_bootSequence[] = stdClass([
-						'id'	=> $module->id,
-						'pre'	=> FALSE
-					]);
-				}
+			foreach( $G_CONF[ 'tailing-modules' ] as $moduleName ) {
+				$module = PBModule( $moduleName, TRUE );
+				$this->_bootSequence[] = stdClass([
+					'id'	=> $module->id,
+					'pre'	=> FALSE
+				]);
+			}
+			foreach( self::$_TAILING_MODULES as $moduleName ) {
+				$module = PBModule( $moduleName, TRUE );
+				$this->_bootSequence[] = stdClass([
+					'id'	=> $module->id,
+					'pre'	=> FALSE
+				]);
 			}
 		}
 		public function getNextModule() {
@@ -130,7 +147,62 @@
 				$this->_bootSequence = &$temp;
 			}
 		}
-
+		
+		
+		
+		
+		
+		
+		private static $_LEADING_MODULES = [];
+		public static function LEADING_MODULES($modules=[]) {
+			if ( func_num_args() == 0 ) {
+				return self::$_LEADING_MODULES;
+			}
+			else {
+				if ( empty($modules) ) {
+					return NULL;
+				}
+				
+				
+				
+				if ( is_string($modules) ) {
+					$modules = [$modules];
+				}
+				
+				if ( is_array($modules) ) {
+					self::$_LEADING_MODULES = $modules;
+				}
+				
+				return NULL;
+			}
+		}
+		
+		private static $_TAILING_MODULES = [];
+		public static function TAILING_MODULES($modules=[]) {
+			if ( func_num_args() == 0 ) {
+				return self::$_TAILING_MODULES;
+			}
+			else {
+				if ( empty($modules) ) {
+					return NULL;
+				}
+				
+				
+				
+				if ( is_string($modules) ) {
+					$modules = [$modules];
+				}
+				
+				if ( is_array($modules) ) {
+					self::$_TAILING_MODULES = $modules;
+				}
+				
+				return NULL;
+			}
+		}
+		
+		
+		
 		private function _prependBootSequence( $bootSequence ) {
 			if ( !is_array( $bootSequence )) return;
 	
@@ -158,10 +230,13 @@
 			}
 		}
 	}
-	function PBProc( $kernelRef = NULL ) {
+	
+	
+	
+	function PBProc($sysInst = NULL) {
 		static $_singleton = NULL;
 		if ( $_singleton === NULL ) {
-			$_singleton = new PBProc( $kernelRef );
+			$_singleton = new PBProc( $sysInst );
 		}
 		
 		return $_singleton;

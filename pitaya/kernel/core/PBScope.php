@@ -57,7 +57,7 @@
 		}
 		public function breadcrumb( $glue = '#' ) {
 			return implode( $glue,
-				data_filter( $this->_scope_levels, function($item) use( $glue ) {
+				ary_filter( $this->_scope_levels, function($item) use( $glue ) {
 					return str_replace( $glue, "_", "{$item}" );
 				})
 			);
@@ -68,7 +68,8 @@
 		}
 		public function __toString() { return $this->breadcrumb(); }
 	}
-	class_alias( 'PBScope', 'PBScopeTracer', FALSE );
+	
+	
 	
 	function PBScope() {
 		static $_singleton = NULL;

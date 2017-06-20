@@ -25,17 +25,4 @@
 		public function offsetUnset($offset) {
 			unset($this->_procStack[$offset]);
 		}
-		
-		
-		
-		// region [ DEPRECATED ]
-		public function __set_item( $call ) {
-			DEPRECATION_WARNING("PBFuncChain::item property is marked as deprecated! Please refer to PBFuncChain[] operator!");
-			$this[] = $call;
-		}
-		public function add( $callable ) {
-			DEPRECATION_WARNING("PBFuncChain::add api is marked as deprecated! Please refer to PBFuncChain[] operator!");
-			$this[] = $callable;
-		}
-		// endregion
 	}

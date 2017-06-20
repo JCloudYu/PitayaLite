@@ -1,7 +1,5 @@
 <?php
-	const SYS_LOG_DIR		= SPACE_ROOT . '/data/log';
-	const PITAYA_PATH		= SPACE_ROOT . '/pitaya';
-	const BASIS_PATH		= SPACE_ROOT . '/app';
+	const SYS_LOG_DIR		= __ROOT . '/log';
 	const ENV_ATTACH_LEVEL	= 2;
 	
 	const SYS_TIMEZONE		= 'Asia/Taipei';

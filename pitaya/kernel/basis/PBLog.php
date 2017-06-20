@@ -1,164 +1,102 @@
 <?php
 	final class PBLog {
-		const LOG_INFO_TIME		= 1;
-		const LOG_INFO_CATE		= 2;
-		const LOG_INFO_BASIS	= 4;
-		const LOG_INFO_ROUTE	= 8;
-		const LOG_INFO_ALL		= 0xFFFFFFFF;
-	
 		private $_logStream = NULL;
-		public function __construct($logPath) {
-			$this->_logStream = self::ObtainStream($logPath);
+		private $_tagName	= NULL;
+		public function __construct($logPath, $tagName=NULL) {
+			$this->_logStream = @fopen( $logPath, 'a+b' );
 		}
-		public function genLogMsg( $message, $logCate = '', $options = [] ) {
-			if ( !is_array($options) ) $options = [];
-			
-			$LOG_INFO = array_key_exists( 'info-level', $options ) ? $options['info-level'] | 0 : self::LOG_INFO_ALL;
-			if ( !is_string($message) ) $message = print_r( $message, TRUE );
-			if ( !is_array(@$options['tags']) ) $options['tags'] = array();
-			$info = self::PrepLogInfo( $logCate );
-
-
-
-			// INFO: Process other tags
-			$tags = implode('', array_map(function($item) {
-				return "[{$item}]";
-			}, array_unique($options['tags'])));
-
-
-
-			// INFO: Write file stream
-			$timeInfo = '';
-			if ( $LOG_INFO & self::LOG_INFO_TIME )
-			{
-				$timeInfo = in_array( 'UNIX_TIMESTAMP', $options ) ? $info['time'] : $info['timestamp'];
-				$timeInfo = "[{$timeInfo}]";
-			}
-			
-			$cateInfo	= ( $LOG_INFO & self::LOG_INFO_CATE ) ? "[{$info['cate']}]" : '';
-			$basisInfo	= ( $LOG_INFO & self::LOG_INFO_BASIS ) ? "[{$info['service']}]" : '';
-			$routeInfo	= ( $LOG_INFO & self::LOG_INFO_ROUTE) ? "[{$info['route']}]" : '';
-			$posInfo	= " ";
-			if ( DEBUG_BACKTRACE_ENABLED ) {
-				$backtrace = debug_backtrace();
-				$posInfo = " {$backtrace[2]['file']}:{$backtrace[2]['line']}\n";
-			}
-			
-			
-			
-			$msg = "{$timeInfo}{$cateInfo}{$basisInfo}{$routeInfo}{$tags}{$posInfo}{$message}";
-			return $msg;
-		}
-		public function logMsg( $message, $logCate = '', $options = [] ) {
-			if ( empty($this->_logStream) ) return FALSE;
-
-
-			$newline = array_key_exists("newline", $options) ? !!$options[ 'newline' ] : TRUE;
-			$msg = ( !!@$options[ 'nowrap' ] ) ? $message : $this->genLogMsg( $message, $logCate, $options );
-			
-			fwrite( $this->_logStream, $msg . (!empty($newline) ? "\n" : "") );
-			fflush( $this->_logStream );
-			return $msg;
-		}
-
-		public static function Log($message, $logFileName = '', $options = array())
-		{
-			$logPath = SYS_LOG_DIR . "/" . (empty($logFileName) ? "service.pblog" : $logFileName);
-			$log	 = self::ObtainLog($logPath);
-
-			return $log->logMsg($message, '', $options);
-		}
-		public static function ERRLog($message, $logFileName = '', $options = array())
-		{
-			$logPath = SYS_LOG_DIR . "/" . (empty($logFileName) ? "error.pblog" : $logFileName);
-			$log	 = self::ObtainLog($logPath);
-
-			error_log( $msg = $log->genLogMsg( $message, 'ERROR', array_merge($options, [ 'info-level' => self::LOG_INFO_ALL & ~self::LOG_INFO_TIME ]) ) );
-			return $log->logMsg( $message, 'ERROR', $options );
-		}
-		public static function SYSLog($message, $logFileName = '', $options = array())
-		{
-			$logPath = SYS_LOG_DIR . "/" . (empty($logFileName) ? "system.pblog" : $logFileName);
-			$log	 = self::ObtainLog($logPath);
-
-			return $log->logMsg($message, 'SYS', $options);
-		}
-		public static function ShareLog($message, $logFileName = '', $options = array())
-		{
-			$logPath = SYS_LOG_DIR . "/" . (empty($logFileName) ? "share.pblog" : $logFileName);
-			$log	 = self::ObtainLog($logPath);
-
-			return $log->logMsg($message, 'SHARE', $options);
-		}
-		public static function CustomLog($message, $cate = 'CUSTOM', $logFileName = '', $options = array())
-		{
-			$logPath = SYS_LOG_DIR . "/" . (empty($logFileName) ? "custom.pblog" : $logFileName);
-			$log	 = self::ObtainLog($logPath);
-
-			return $log->logMsg($message, empty($cate) ? 'CUSTOM' : "{$cate}", $options);
-		}
-
-
-
-		public static function ObtainLog($logFilePath)
-		{
-			static $_cachedLog = array();
-
-			$pathKey = md5($logFilePath);
-			if (empty($_cachedLog[$pathKey]))
-				$_cachedLog[$pathKey] = new PBLog($logFilePath);
-
-			return $_cachedLog[$pathKey];
-		}
-		private static function PrepLogInfo( $logCate = '' ) {
-			$curTime = time();
-			return [
-				'cate'		=> (empty($logCate) || !is_string($logCate)) ? 'INFO' : "{$logCate}",
-				'time'		=> $curTime,
-				'timestamp' => date("Y-m-d G:i:s", $curTime),
-				'service'	=> (!defined('SESSION_BASIS') ? 'Pitaya' : SESSION_BASIS),
-				'route'		=> IS_CLI_ENV ? 'CLI' : 'NET'
+		public function genMsg($message) {
+			$attr = [
+				date( "Y/m/d H:i:s" ),
+				IS_CLI_ENV ? 'CLI' : 'HTTP'
 			];
-		}
-		private static function ObtainStream($logFilePath)
-		{
-			static $_fileStream = array();
-
-			$pathKey = md5($logFilePath);
-
-			if (empty($_fileStream[$pathKey]))
-			{
-				if (is_dir($logFilePath))
-					return NULL;
-
-				$logPath = dirname($logFilePath);
-				if (!is_dir($logPath)) @mkdir($logPath);
-
-
-
-				if (is_file($logFilePath))
-				{
-					$today = strtotime(date('Y-m-d'));
-					$fileTime = filemtime($logFilePath);
-
-					if ($fileTime <= $today)
-					{
-						$fileTime = date('Ymd', filemtime($logFilePath));
-						@rename( $logFilePath, "{$logFilePath}-{$fileTime}" );
-					}
-				}
-
-
-				touch( $logFilePath ); 
-				chmod( $logFilePath, 0644 );
-				$hLog = @fopen($logFilePath, 'a+b');
-				if ( empty( $hLog ) ) return NULL;
-
-
-
-				$_fileStream[$pathKey] = $hLog;
+			if ( $this->_tagName ) {
+				$attr[] = $this->_tagName;
 			}
-
-			return $_fileStream[$pathKey];
+			$execInfo = implode( '][', $attr );
+			
+			
+			$posInfo = "";
+			if ( DEBUG_BACKTRACE_ENABLED ) {
+				$backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
+				$posInfo = "{$backtrace[1]['file']}:{$backtrace[1]['line']}\n";
+			}
+			
+			
+			
+			$msg = "[{$execInfo}] {$posInfo}{$message}";
+			return $msg;
+		}
+		public function log($message) {
+			if ( empty($this->_logStream) ) return FALSE;
+			
+			fwrite( $this->_logStream, $this->genMsg($message) . LF );
+			fflush( $this->_logStream );
+			return TRUE;
+		}
+		
+		
+		
+		
+		
+		public static function NullLog() {
+			static $_singleton = NULL;
+			if ( $_singleton === NULL ) {
+				$_singleton = new PBLog(FALSE);
+			}
+			return $_singleton;
+		}
+		public static function ERRLog($message) {
+			$log = PBLog( 'error' );
+			error_log($log->genMsg($message));
+			return $log->log($message);
+		}
+		public static function SYSLog($message) {
+			return PBLog( 'sys' )->log($message);
+		}
+		public static function ShareLog($message) {
+			return PBLog( 'info' )->log($message);
 		}
 	}
+	
+	function PBLog($id, $logFileName=NULL, $tagName=NULL) {
+		static $_cachedLog = [];
+		static $_g_conf = NULL;
+		
+		if ($_g_conf === NULL) {
+			$_g_conf = PBStaticConf( 'pitaya-env' );
+		}
+		
+		
+		
+		if (func_num_args() == 0) {
+			return PBLog::NullLog();
+		}
+		else {
+			$log = @$_cachedLog[$id];
+			if (func_num_args() == 1) {
+				return $log ?: PBLog::NullLog();
+			}
+		}
+		
+		
+		
+		if ( $log !== NULL ) {
+			return $log;
+		}
+		
+		if ( empty($_g_conf['log-dir']) ) {
+			$log = PBLog::NullLog();
+		}
+		else {
+			$logFilePath = "{$_g_conf[ 'log-dir' ]}/{$logFileName}";
+			$log = new PBLog($logFilePath, $tagName);
+		}
+
+		return ($_cachedLog[$id] = $log);
+	}
+		
+	PBLog( 'info',		'info.pblog',		'INF' );
+	PBLog( 'sys',		'system.pblog',		'SYS' );
+	PBLog( 'error',		'error.pblog',		'ERR' );
+	PBLog( 'exception',	'exception.pblog',	'ERR' );

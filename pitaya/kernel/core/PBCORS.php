@@ -18,7 +18,7 @@
 			$this->_CORS_Data =  [
 				'origin'	=> (@$headers[ 'Origin' ] === NULL) ? NULL : strtolower("{$headers['Origin']}"),
 				'method'	=> (@$headers[ 'Access-Control-Request-Method' ] === NULL) ? NULL : strtoupper("{$headers['Access-Control-Request-Method']}"),
-				'headers'	=> (@$headers[ 'Access-Control-Request-Headers' ] === NULL) ? NULL : data_filter( explode( ',', @"{$headers[ 'Access-Control-Request-Headers' ]}"), function( $item ){ return ucwords(trim($item), '-'); }, '' )
+				'headers'	=> (@$headers[ 'Access-Control-Request-Headers' ] === NULL) ? NULL : ary_filter( explode( ',', @"{$headers[ 'Access-Control-Request-Headers' ]}"), function( $item ){ return ucwords(trim($item), '-'); }, '' )
 			];
 		}
 		
@@ -30,7 +30,7 @@
 			$origin = @$this->_CORS_Data[ 'origin' ];
 			$acceptNull = FALSE; $wildcard = FALSE;
 			
-			$filterd = data_filter( $whiteList, function( $candidate ) use ( $origin, &$acceptNull, &$wildcard ) {
+			$filterd = ary_filter( $whiteList, function( $candidate ) use ( $origin, &$acceptNull, &$wildcard ) {
 				$acceptNull = $acceptNull || ( $candidate === NULL );
 				$wildcard = $wildcard || ($candidate === '*');
 				

@@ -56,6 +56,7 @@
 			return $variables;
 		}
 	}
+
 	function PBTmplRenderer( $tmplName, $basePath = NULL ) {
 		return PBTmplRenderer::Tpl( $tmplName, $basePath );
 	}
