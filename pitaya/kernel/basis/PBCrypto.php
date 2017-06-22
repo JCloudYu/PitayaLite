@@ -82,28 +82,126 @@
 	final class PBJWT {
 		const ALG_NONE	= 'NONE';
 		const ALG_HS256 = 'HS256';
-	
+		const ALG_HS384 = 'HS384';
+		const ALG_HS512 = 'HS512';
+		const ALG_RS256 = 'RS256';
+		const ALG_RS384 = 'RS384';
+		const ALG_RS512 = 'RS512';
+		
+		// INFO: Non-standard signing algorithm
+		const ALG_RAW_RS256 = 'RAW_RS256';
+		const ALG_RAW_RS384 = 'RAW_RS384';
+		const ALG_RAW_RS512 = 'RAW_RS512';
+		
+		/**
+		 * @param stdClass $payload The payload of the message
+		 * @param string $alg Encryption algorithm
+		 * @param string|PBRSA $secret The secret used to generate the signature
+		 * @return string|bool False on error
+		 */
 		public static function Encode( stdClass $payload, $alg = 'NONE', $secret = '' ) {
 			$payload = PBBase64::URLEncode(json_encode($payload));
 			
-			if ( !in_array( $alg = strtoupper($alg), [ 'NONE', 'HS256' ] ) ) {
-				$alg = 'NONE';
-			}
-			
-			if ( $alg == "NONE" ) {
-				$header	 = PBBase64::URLEncode(json_encode([ 'alg' => 'none' ]));
-				$leading = "{$header}.{$payload}";
-				$sig = "";
-			}
-			else
-			if ( $alg == "HS256" ) {
-				$header	 = PBBase64::URLEncode(json_encode([ 'alg' => 'HS256', 'typ' => 'JWT' ]));
-				$leading = "{$header}.{$payload}";
-				$sig = PBBase64::URLEncode(hash_hmac('sha256', $leading, $secret, TRUE));
+			switch(strtoupper($alg)) {
+				case "HS256":
+					$header	 = PBBase64::URLEncode(json_encode([ 'alg' => 'HS256', 'typ' => 'JWT' ]));
+					$leading = "{$header}.{$payload}";
+					$sig = PBBase64::URLEncode(hash_hmac('sha256', $leading, $secret, TRUE));
+					break;
+					
+				case "HS384":
+					$header	 = PBBase64::URLEncode(json_encode([ 'alg' => 'HS384', 'typ' => 'JWT' ]));
+					$leading = "{$header}.{$payload}";
+					$sig = PBBase64::URLEncode(hash_hmac('sha384', $leading, $secret, TRUE));
+					break;
+				
+				case "HS512":
+					$header	 = PBBase64::URLEncode(json_encode([ 'alg' => 'HS512', 'typ' => 'JWT' ]));
+					$leading = "{$header}.{$payload}";
+					$sig = PBBase64::URLEncode(hash_hmac('sha512', $leading, $secret, TRUE));
+					break;
+					
+				case "RS256":
+					$header	 = PBBase64::URLEncode(json_encode([ 'alg' => 'RS256', 'typ' => 'JWT' ]));
+					$leading = "{$header}.{$payload}";
+					if ( !is_a($secret, PBRSA::class) && !$secret->isPrivate ) {
+						return FALSE;
+					}
+					
+					$sig = PBBase64::URLEncode($secret->sign($leading, OPENSSL_ALGO_SHA256));
+					break;
+					
+				case "RS384":
+					$header	 = PBBase64::URLEncode(json_encode([ 'alg' => 'RS384', 'typ' => 'JWT' ]));
+					$leading = "{$header}.{$payload}";
+					if ( !is_a($secret, PBRSA::class) && !$secret->isPrivate ) {
+						return FALSE;
+					}
+					
+					$sig = PBBase64::URLEncode($secret->sign($leading, OPENSSL_ALGO_SHA384));
+					break;
+					
+				case "RS512":
+					$header	 = PBBase64::URLEncode(json_encode([ 'alg' => 'RS512', 'typ' => 'JWT' ]));
+					$leading = "{$header}.{$payload}";
+					if ( !is_a($secret, PBRSA::class) && !$secret->isPrivate ) {
+						return FALSE;
+					}
+					
+					$sig = PBBase64::URLEncode($secret->sign($leading, OPENSSL_ALGO_SHA512));
+					break;
+					
+				case "RAW_RS256":
+					$header	 = PBBase64::URLEncode(json_encode([ 'alg' => 'RAW_RS256', 'typ' => 'JWT' ]));
+					$leading = "{$header}.{$payload}";
+					if ( !is_a($secret, PBRSA::class) ) {
+						return FALSE;
+					}
+					
+					$rawSig = sha256($leading, TRUE);
+					$sig = PBBase64::URLEncode($secret->encrypt($rawSig));
+					break;
+					
+				case "RAW_RS384":
+					$header	 = PBBase64::URLEncode(json_encode([ 'alg' => 'RAW_RS384', 'typ' => 'JWT' ]));
+					$leading = "{$header}.{$payload}";
+					if ( !is_a($secret, PBRSA::class) ) {
+						return FALSE;
+					}
+					
+					$rawSig = sha384($leading, TRUE);
+					$sig = PBBase64::URLEncode($secret->encrypt($rawSig));
+					break;
+					
+				case "RAW_RS512":
+					$header	 = PBBase64::URLEncode(json_encode([ 'alg' => 'RAW_RS512', 'typ' => 'JWT' ]));
+					$leading = "{$header}.{$payload}";
+					if ( !is_a($secret, PBRSA::class) ) {
+						return FALSE;
+					}
+					
+					$rawSig = sha512($leading, TRUE);
+					$sig = PBBase64::URLEncode($secret->encrypt($rawSig));
+					break;
+				
+				case "NONE":
+					$header	 = PBBase64::URLEncode(json_encode([ 'alg' => 'none' ]));
+					$leading = "{$header}.{$payload}";
+					$sig = "";
+					break;
+				
+				default:
+					return FALSE;
 			}
 			
 			return "{$leading}.{$sig}";
 		}
+		
+		/**
+		 * @param string $jwtToken Encoded JWT token
+		 * @param string|PBRSA $secret The secret to verify the token
+		 * @return null|object|stdClass
+		 */
 		public static function Decode( $jwtToken, $secret = '' ) {
 			$jwtToken = explode( '.', "{$jwtToken}" );
 			if ( count($jwtToken) != 3 ) return NULL;
@@ -112,25 +210,93 @@
 			$header = @json_decode(PBBase64::URLDecode($encHeader));
 			$payload = @json_decode(PBBase64::URLDecode($encPayload));
 
-			if ( empty($header) || empty($payload) ) return NULL;
-			if ( @$header->alg === "none" ) {
-				return stdClass([
-					'header'	=> $header,
-					'payload'	=> $payload,
-					'verified'	=> TRUE
-				]);
+			if ( empty($header) || empty($payload) ) {
+				return NULL;
 			}
-			else
-			if ( @$header->alg === "HS256" ) {
-				$verified = ( func_num_args() < 2 ) ? FALSE : ($sig === PBBase64::URLEncode(hash_hmac('sha256', "{$encHeader}.{$encPayload}", $secret, TRUE)));
-				return stdClass([
-					'header'	=> $header,
-					'payload'	=> $payload,
-					'verified'	=> $verified
-				]);
+
+
+			$verified = FALSE;
+			$argCount = func_num_args();
+			switch(strtoupper(@$header->alg)) {
+				case "NONE":
+					$verified = TRUE;
+					break;
+					
+				case "HS256":
+					if ( $argCount > 1 ) {
+						$verify = PBBase64::URLEncode(hash_hmac('sha256', "{$encHeader}.{$encPayload}", $secret, TRUE));
+						$verified = ($verify == $sig);
+					}
+					break;
+					
+				case "HS384":
+					if ( $argCount > 1 ) {
+						$verify = PBBase64::URLEncode(hash_hmac('sha384', "{$encHeader}.{$encPayload}", $secret, TRUE));
+						$verified = ($verify == $sig);
+					}
+					break;
+				
+				case "HS512":
+					if ( $argCount > 1 ) {
+						$verify = PBBase64::URLEncode(hash_hmac('sha512', "{$encHeader}.{$encPayload}", $secret, TRUE));
+						$verified = ($verify == $sig);
+					}
+					break;
+				
+				case "RS256":
+					if ( $argCount > 1 && is_a($secret, PBRSA::class) ) {
+						$verify = PBBase64::URLDecode($sig);
+						$verified = !!$secret->validate("{$encHeader}.{$encPayload}", $verify, OPENSSL_ALGO_SHA256);
+					}
+					break;
+				
+				case "RS384":
+					if ( $argCount > 1 && is_a($secret, PBRSA::class) ) {
+						$verify = PBBase64::URLDecode($sig);
+						$verified = !!$secret->validate("{$encHeader}.{$encPayload}", $verify, OPENSSL_ALGO_SHA384);
+					}
+					break;
+				
+				case "RS512":
+					if ( $argCount > 1 && is_a($secret, PBRSA::class) ) {
+						$verify = PBBase64::URLDecode($sig);
+						$verified = !!$secret->validate("{$encHeader}.{$encPayload}", $verify, OPENSSL_ALGO_SHA512);
+					}
+					break;
+				
+				case "RAW_RS256":
+					if ( $argCount > 1 && is_a($secret, PBRSA::class) ) {
+						$digest = sha256( "{$encHeader}.{$encPayload}", TRUE );
+						$verify = $secret->decrypt(PBBase64::URLDecode($sig));
+						$verified = ($digest == $verify);
+					}
+					break;
+				
+				case "RAW_RS384":
+					if ( $argCount > 1 && is_a($secret, PBRSA::class) ) {
+						$digest = sha384( "{$encHeader}.{$encPayload}", TRUE );
+						$verify = $secret->decrypt(PBBase64::URLDecode($sig));
+						$verified = ($digest == $verify);
+					}
+					break;
+				
+				case "RAW_RS512":
+					if ( $argCount > 1 && is_a($secret, PBRSA::class) ) {
+						$digest = sha512( "{$encHeader}.{$encPayload}", TRUE );
+						$verify = $secret->decrypt(PBBase64::URLDecode($sig));
+						$verified = ($digest == $verify);
+					}
+					break;
+					
+				default:
+					return NULL;
 			}
 			
-			return NULL;
+			return stdClass([
+				'header'	=> $header,
+				'payload'	=> $payload,
+				'verified'	=> $verified
+			]);
 		}
 	}
 	final class PBBase64 {
@@ -195,6 +361,10 @@
 		private $_hKey		= NULL;
 		private $_isPriv	= FALSE;
 		private $_keyDetail	= NULL;
+	
+		private $_pubCache	= NULL;
+
+
 
 		private function __construct($hKey, $isPrivate=TRUE) {
 			$this->_hKey		= $hKey;
@@ -207,8 +377,16 @@
 					return $this->_isPriv;
 				
 				case "publicRSAKey":
+					if ( !$this->_isPriv ) {
+						return $this;
+					}
+					
+					if ( $this->_pubCache ) {
+						return $this->_pubCache;
+					}
+					
 					$hKey = openssl_pkey_get_public($this->_keyDetail['key']);
-					return new PBRSA($hKey, FALSE);
+					return ($this->_pubCache = new PBRSA($hKey, FALSE));
 				
 				case "publicKey":
 					return $this->_keyDetail['key'];
@@ -265,6 +443,20 @@
 			}
 			
 			return $status ? $output : FALSE;
+		}
+		public function sign($data, $alg=OPENSSL_ALGO_SHA256) {
+			if ( !$this->_isPriv ) return FALSE;
+			
+			$status = openssl_sign($data, $output, $this->_hKey, $alg);
+			return $status ? $output : FALSE;
+		}
+		public function validate($data, $signature, $alg=OPENSSL_ALGO_SHA256) {
+			if ( $this->_isPriv ) {
+				$args = func_get_args();
+				return $this->publicRSAKey->validate(...$args);
+			}
+			
+			return openssl_verify($data, $signature, $this->_hKey, $alg);
 		}
 		// endregion
 	}

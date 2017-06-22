@@ -98,6 +98,14 @@
 		return hash_file( 'sha256', $fileName, $rawOutput );
 	}
 	
+	function sha384( $content, $rawOutput = FALSE ) {
+		return hash( 'sha384', $content, $rawOutput );
+	}
+	
+	function sha384_file( $fileName, $rawOutput = FALSE ) {
+		return hash_file( 'sha384', $fileName, $rawOutput );
+	}
+	
 	function sha512( $content, $rawOutput = FALSE ) {
 		return hash( 'sha512', $content, $rawOutput );
 	}
