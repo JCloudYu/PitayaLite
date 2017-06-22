@@ -152,165 +152,120 @@
 			return base64_decode( $data, TRUE );
 		}
 	}
-	final class PBRSA extends PBObject {
 	
-		const DEFAULT_KEY_LENGTH = 2048;
-		const DEFAULT_TAILING_SIZE = 11;
-	
-		public static function RSA( $idenity, $keyPath = NULL, $keyLen = PBRSA::DEFAULT_KEY_LENGTH ) {
-		
-			static $keyCache = [];
-			if ( $keyCache[ $idenity ] ) return $keyCache[ 'identity' ];
-			
-			
-			$keyInfo = PBRSA::ParseKey( $keyPath, $keyLen );
-			return ( $keyInfo === NULL ) ? NULL : ( $keyCache[ $idenity ] = new PBRSA( $keyInfo ) );
-		}
-		private static function ParseKey( $keyPath = NULL, $keyLen = PBRSA::DEFAULT_KEY_LENGTH ) {
-		
-			$keyType = [];
-			if ( $keyPath === NULL )
-			{
-				$keyInst = openssl_pkey_new([
-					'private_key_bits' => $keyLen,
-					'private_key_type' => OPENSSL_KEYTYPE_RSA
-				]);
-				
-				$keyType = 'private';
-			}
-			else
-			{
-				if ( is_file($keyPath) )
-				{
-					if ( !is_readable($keyPath) ) return NULL;
-					$keyContent = file_get_contents( $keyPath );
-				}
-
-			
-
-				$keyInst = openssl_pkey_get_private( $keyContent );
-				$keyType = 'private';
-				if ( !$keyInst )
-				{
-					$keyInst = openssl_pkey_get_public( $keyContent );
-					if ( !$keyContent ) return NULL;
-					
-					$keyType = 'public';
-				}
+	/**
+	 * @property-read PBRSA $publicRSAKey
+	 * @property-read bool $isPrivate
+	 * @property-read string|bool $privateKey
+	 * @property-read string $publicKey
+	 * @property-read int $size
+	 * @property-read int $type
+	 */
+	final class PBRSA {
+		/**
+		 * @param mixed $pack The packed content of the key
+		 * @param string $passPhrase The pass phrase that encodes the packed content
+		 * @return PBRSA|null
+		 */
+		public static function LoadRSA($pack, $passPhrase='') {
+			$args = [$pack];
+			if ( !empty($passPhrase) ) {
+				$args[] = $passPhrase;
 			}
 			
-			return [ 'handle' => $keyInst, 'type' => $keyType ];
+			$hKey = @openssl_pkey_get_private(...$args);
+			if ( $hKey !== FALSE ) {
+				return new PBRSA($hKey, TRUE);
+			}
+			
+			$hKey = @openssl_pkey_get_public(...$args);
+			if ($hKey !== FALSE) {
+				return new PBRSA($hKey, FALSE);
+			}
+			
+			return NULL;
 		}
 
 
 
+
+
+
+		// region [ Main PBRSA Content ]
 		private $_hKey		= NULL;
-		private $_keyLen	= self::DEFAULT_KEY_LENGTH;
-		private $_keyType	= NULL;
-		private $_chunkSize	= 0;
-		private $_keyData	= NULL;
+		private $_isPriv	= FALSE;
+		private $_keyDetail	= NULL;
 
-		private function __construct( $RSAInfo ) {
-		
-			$keyInfo = openssl_pkey_get_details( $RSAInfo[ 'handle' ] );
-			
-			$this->_hKey		= $RSAInfo[ 'handle' ];
-			$this->_keyLen		= $keyInfo[ 'bits' ];
-			$this->_keyType		= $RSAInfo[ 'type' ];
-			$this->_chunkSize	= ($keyInfo[ 'bits' ] / 8.0) | 0;
-
+		private function __construct($hKey, $isPrivate=TRUE) {
+			$this->_hKey		= $hKey;
+			$this->_isPriv		= $isPrivate;
+			$this->_keyDetail	= openssl_pkey_get_details($hKey);
 		}
-		public function __get_publicKey() {
-			static $keyCache = NULL;
-			if ( $keyCache === NULL )
-				$keyCache = @openssl_pkey_get_details( $this->_hKey );
-			
-			return $keyCache['key'];
-		}
-		public function __get_privateKey() {
-			static $keyCache = NULL;
-			
-			if ( $this->_keyType != "private" ) return NULL;
-			
-			
-			if ( $keyCache === NULL )
-				@openssl_pkey_export( $this->_hKey, $keyCache );
-			
-			return empty($keyCache) ? NULL : $keyCache;
-		}
-		public function __get_keyInfo() {
-			static $keyCache = NULL;
-			if ( $keyCache === NULL )
-			{
-				$keyCache = @openssl_pkey_get_details( $this->_hKey );
-				$keyCache[ 'key' ] = [ 'public' => $keyCache[ 'key' ] ];
-				$keyCache[ 'key' ][ 'private' ] = $this->__get_privateKey();
+		public function __get($name) {
+			switch($name) {
+				case "isPrivate":
+					return $this->_isPriv;
+				
+				case "publicRSAKey":
+					$hKey = openssl_pkey_get_public($this->_keyDetail['key']);
+					return new PBRSA($hKey, FALSE);
+				
+				case "publicKey":
+					return $this->_keyDetail['key'];
+					
+				case "privateKey":
+					return $this->exportPrivateKey();
+				
+				case "size":
+					return $this->_keyDetail['bits'];
+				
+				case "type":
+					return $this->_keyDetail['type'];
+				
+				default:
+					throw new Exception("Property `{$name}` is not defined");
 			}
-		
-			return $keyCache;
 		}
-		public function __get_is_private() { return $this->_keyType === "private"; }
-		public function __get_bits() { return $this->_keyLen; }
-		public function __get_type() {
-			static $typeCache = NULL;
-			
-			if ( $typeCache === NULL )
-			{
-				$info = $this->keyInfo;
-				switch( $info['type'] )
-				{
-					case OPENSSL_KEYTYPE_RSA:
-						$typeCache = 'rsa'; break;
-					case OPENSSL_KEYTYPE_DSA:
-						$typeCache = 'dsa'; break;
-					case OPENSSL_KEYTYPE_DH:
-						$typeCache = 'dh'; break;
-					case OPENSSL_KEYTYPE_EC:
-						$typeCache = 'ec'; break;
-					default:
-						$typeCache = 'unknown'; break;
-				}
+		public function exportPrivateKey($passPhrase='', $cipher=OPENSSL_CIPHER_AES_256_CBC) {
+			if ( !$this->_isPriv ) {
+				return FALSE;
 			}
 			
-			return $typeCache;
-		}
-		
-		
-		
-		
-		/*
-		public function encrypt($data)
-		{
-			$chunks = str_split($data, $this->_chunkSize - self::DEFAULT_TAILING_SIZE);
 
-			$result = '';
-			foreach ($chunks as $chunk)
-			{
-				if (openssl_public_encrypt($chunk, $encrypted, $this->_hKeyAlt))
-					$result .= base64_encode($encrypted);
-				else
-					return '';
+			$status = openssl_pkey_export(
+				$this->_hKey,
+				$output,
+				empty($passPhrase) ? NULL : $passPhrase,
+				[ 'encrypt_key_cipher' => $cipher ]
+			);
+			if ( !$status ) {
+				return FALSE;
 			}
-
-			return $result;
+			
+			return $output;
 		}
-
-		public function decrypt($data)
-		{
-			if ($this->_keyType == 'public') return '';
-
-			$result = '';
-			$chunks = str_split($data, intval(ceil(floatval($this->_chunkSize) / 3.0) * 4));
-
-			foreach ($chunks as $chunk)
-			{
-				if (openssl_private_decrypt(base64_decode($chunk), $decrypted, $this->_hKey))
-					$result .= $decrypted;
-				else
-					return '';
+		public function encrypt($data, $padding=OPENSSL_PKCS1_PADDING) {
+			$output = NULL;
+			if ( $this->_isPriv ) {
+				$status = openssl_private_encrypt($data, $output, $this->_hKey, $padding);
 			}
-
-			return $result;
+			else {
+				$status = openssl_public_encrypt($data, $output, $this->_hKey, $padding);
+			}
+			
+			return $status ? $output : FALSE;
 		}
-		*/
+		public function decrypt($data, $padding=OPENSSL_PKCS1_PADDING) {
+			$output = NULL;
+			if ( $this->_isPriv ) {
+				$status = openssl_private_decrypt($data, $output, $this->_hKey, $padding);
+			}
+			else {
+				$status = openssl_public_decrypt($data, $output, $this->_hKey, $padding);
+			}
+			
+			return $status ? $output : FALSE;
+		}
+		// endregion
 	}
+
