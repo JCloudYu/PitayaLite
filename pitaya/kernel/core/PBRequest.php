@@ -1,4 +1,38 @@
 <?php
+	/**
+	 * Class PBRequest
+	 * @property-read array $localePrefer
+	 * @property-read array $headers
+	 * @property-read array $resource
+	 * @property-read array $files
+	 * @property-read string $method
+	 * @property-read array $query
+	 * @property-read int $attachLevel
+	 * @property-read ____pitaya_base_object__path_mapper $attachAnchor
+	 * @property-read ____pitaya_base_object__path_mapper $effectiveAnchor
+	 * @property-read ____pitaya_base_object__path_mapper $fullPath
+	 * @property-read string $domain
+	 * @property-read string $protocol
+	 * @property-read string $fullHost
+	 * @property-read bool $ssl
+	 * @property-read int $port
+	 * @property-read int $requestTime
+	 * @property-read string $httpServer
+	 * @property-read array $httpServerInfo
+	 * @property-read string $contentType
+	 */
+	 /*
+	  * @property-read array $range
+	  * @property-read string $rangeUnit
+	  * @property-read mixed $data
+	  * @property-read mixed $env
+	  * @property-read mixed $attr
+	  * @property-read mixed $baseQuery
+	  * @property-read mixed $rawQuery
+	  * @property-read mixed $argv
+	  * @property-read array $server
+	  * @property-read mixed $command
+	  */
 	final class PBRequest extends PBObject {
 	
 		// region [ Singleton Controller ]
@@ -75,6 +109,9 @@
 		// endregion
 
 		// region [ Getters / Setters ]
+		private $_filesCache = NULL;
+		private $_contentType = NULL;
+		
 		public function __get_localePrefer() {
 			static $localeInfo = NULL;
 
@@ -85,6 +122,129 @@
 
 			return $localeInfo;
 		}
+		public function __get_query() {
+			return $this->_parsedQuery ?: $this->_incomingRecord['request']['query'];
+		}
+		public function __get_headers() {
+			static $_headers = NULL;
+			if ( $_headers !== NULL ) return $_headers;
+			
+			return ( $_headers = self::GetIncomingHeaders() );
+		}
+		public function __get_resource() {
+			return empty($this->_parsedQuery) ? [] : $this->_parsedQuery[ 'resource' ];
+		}
+		public function __get_files() {
+			if ( $this->_filesCache !== NULL ) return $this->_filesCache;
+
+			$this->_filesCache = array();
+			$files = CAST( $this->_incomingRecord['request']['files'], 'array' );
+			if ( !empty( $files ) )
+			{
+				foreach ( $files as $uploadName => $fileContent )
+				foreach ( $fileContent as $fieldName => $fieldValue )
+				{
+					if ( !is_array($fieldValue) )
+						$fieldValue = array( $fieldValue );
+
+					foreach ( $fieldValue as $id => $value )
+					{
+						$value = ( $fieldName == "name" ) ? urldecode( $value ) : $value;
+						$this->_filesCache[ $uploadName ][ $id ][ $fieldName ] = $value;
+					}
+				}
+			}
+			return $this->_filesCache;
+		}
+		public function __get_method() {
+			return $this->_incomingRecord['request']['method'];
+		}
+		public function __get_attachLevel() {
+			return $this->_incomingRecord['environment']['attachment']['level'];
+		}
+		public function __get_attachAnchor() {
+			static $anchor = NULL;
+			if ( $anchor === NULL ) {
+				$anchor = $this->URIPath(0);
+			}
+			
+			return $anchor->cast_parent();
+		}
+		public function __get_effectiveAnchor() {
+			static $anchor = NULL;
+			if ( $anchor === NULL ) {
+				$anchor = $this->URIPath(1);
+			}
+			
+			return $anchor->cast_parent();
+		}
+		public function __get_fullPath() {
+			static $anchor = NULL;
+			if ( $anchor === NULL ) {
+				$anchor = $this->URIPath()->full();
+			}
+			
+			return $anchor->cast_parent();
+		}
+		public function __get_domain() {
+			return empty($this->server[ 'HTTP_HOST' ]) ? @"{$this->server[ 'SERVER_NAME' ]}" : @"{$this->server[ 'HTTP_HOST' ]}";
+		}
+		public function __get_protocol() {
+			static $protocol = NULL;
+			if ( $protocol !== NULL ) return $protocol;
+			return ( $protocol = $this->is_ssl() ? 'https' : 'http' );
+		}
+		public function __get_fullHost() {
+			$port = $this->port; $ssl = $this->ssl;
+			if ( (!$ssl && $port == 80) || ($ssl && $port == 443) ) {
+				$port = '';
+			}
+			else {
+				$port = ":{$port}";
+			}
+			return "{$this->protocol}://{$this->domain}{$port}";
+		}
+		public function __get_ssl() {
+			static $ssl = NULL;
+			if ( $ssl !== NULL ) return $ssl;
+			return ($ssl = $this->is_ssl());
+		}
+		public function __get_port() {
+			return CAST( $this->server['SERVER_PORT'], 'int strict', -1 );
+		}
+		public function __get_requestTime() {
+			return @$this->_incomingRecord['environment']['server']['REQUEST_TIME'] ?: PITAYA_BOOT_TIME;
+		}
+		public function __get_httpServer() {
+			static $_cache = NULL;
+			if ( $_cache ) return $_cache;
+			
+			$serverInfo = strtolower("{$this->_incomingRecord[ 'environment' ][ 'server' ][ 'SERVER_SOFTWARE' ]}");
+			$divider = strpos( $serverInfo, '/' );
+			$_cache = ( $divider === FALSE ) ? $serverInfo : substr($serverInfo, 0, $divider);
+			return $_cache;
+		}
+		public function __get_httpServerInfo() {
+			static $_cache = NULL;
+			if ( $_cache ) return $_cache;
+			
+			$serverInfo = strtolower("{$this->_incomingRecord[ 'environment' ][ 'server' ][ 'SERVER_SOFTWARE' ]}");
+			$divider = strpos( $serverInfo, ' ' );
+			if ( $divider !== FALSE ) {
+				$serverInfo = substr( $serverInfo, 0, $divider );
+			}
+			
+			
+			list($name, $version) = explode( '/', $serverInfo );
+			$_cache = stdClass([ 'server' => $name, 'version' => $version ]);
+			return (clone $_cache);
+		}
+		public function __get_contentType() {
+			return $this->_contentType ?: ($this->_contentType = self::ParseContentType( @$this->server['CONTENT_TYPE'] ));
+		}
+		
+		
+		
 		private function __parseLocale($localeInfo = '') {
 			$userLocales = explode(',', $localeInfo);
 
@@ -119,9 +279,9 @@
 
 
 				if (empty($quality) || empty($lang)) continue;
-				$localeInfo[] = [ 
-					'lang'		=> strtolower($lang), 
-					'country'	=> strtolower($country), 
+				$localeInfo[] = [
+					'lang'		=> strtolower($lang),
+					'country'	=> strtolower($country),
 					'quality'	=> $quality
 				];
 			}
@@ -166,57 +326,17 @@
 			list($reqRangeType, $range) = @explode('=', "{$this->_incomingRecord['environment']['server']['HTTP_RANGE']}");
 			return $reqRangeType;
 		}
-		
-		public function __get_headers() {
-			static $_headers = NULL;
-			if ( $_headers !== NULL ) return $_headers;
-			
-			return ( $_headers = self::GetIncomingHeaders() );
-		}
-		public function __get_query() {
-			return $this->_parsedQuery ?: $this->_incomingRecord['request']['query'];
-		}
-		public function __get_resource() {
-			return empty($this->_parsedQuery) ? [] : $this->_parsedQuery[ 'resource' ];
-		}
 		public function __get_data() {
 			return $this->_parsedData ?: $this->_incomingRecord['request']['data'];
 		}
-
-		private $_filesCache = NULL;
-		public function __get_files() {
-			if ( $this->_filesCache !== NULL ) return $this->_filesCache;
-
-			$this->_filesCache = array();
-			$files = CAST( $this->_incomingRecord['request']['files'], 'array' );
-			if ( !empty( $files ) )
-			{
-				foreach ( $files as $uploadName => $fileContent )
-				foreach ( $fileContent as $fieldName => $fieldValue )
-				{
-					if ( !is_array($fieldValue) )
-						$fieldValue = array( $fieldValue );
-
-					foreach ( $fieldValue as $id => $value )
-					{
-						$value = ( $fieldName == "name" ) ? urldecode( $value ) : $value;
-						$this->_filesCache[ $uploadName ][ $id ][ $fieldName ] = $value;
-					}
-				}
-			}
-			return $this->_filesCache;
-		}
-		public function __get_method() {
-			return $this->_incomingRecord['request']['method'];
+		public function __get_server() {
+			return $this->_incomingRecord['environment']['server'];
 		}
 		public function __get_env() {
 			return $this->_incomingRecord['environment']['env'];
 		}
 		public function __get_attr() {
 			return $this->_incomingRecord['environment']['attr'];
-		}
-		public function __get_server() {
-			return $this->_incomingRecord['environment']['server'];
 		}
 		public function __get_baseQuery() {
 			return $this->_incomingRecord['request']['query'];
@@ -230,84 +350,13 @@
 		public function __get_command() {
 			return $this->_incomingRecord['command'];
 		}
-		public function __get_attachLevel() {
-			return $this->_incomingRecord['environment']['attachment']['level'];
-		}
-		public function __get_attachAnchor() {
-			static $anchor = NULL;
-			if ( $anchor === NULL ) {
-				$anchor = $this->URIPath(0);
-			}
-			
-			return $anchor->cast_parent();
-		}
-		public function __get_effectiveAnchor() {
-			static $anchor = NULL;
-			if ( $anchor === NULL ) {
-				$anchor = $this->URIPath(1);
-			}
-			
-			return $anchor->cast_parent();
-		}
-		public function __get_fullPath() {
-			static $anchor = NULL;
-			if ( $anchor === NULL ) {
-				$anchor = $this->URIPath()->full();
-			}
-			
-			return $anchor->cast_parent();
-		}
-		public function __get_domain() {
-			return empty($this->server[ 'HTTP_HOST' ]) ? @"{$this->server[ 'SERVER_NAME' ]}" : @"{$this->server[ 'HTTP_HOST' ]}";
-		}
 		public function __get_httpProtocol() {
 			static $protocol = NULL;
 			if ( $protocol !== NULL ) return $protocol;
 			return ( $protocol = $this->is_ssl() ? 'https' : 'http' );
 		}
 		public function __get_httpFullHost() {
-			return "{$this->httpProtocol}://{$this->domain}";
-		}
-		public function __get_ssl() {
-			static $ssl = NULL;
-			if ( $ssl !== NULL ) return $ssl;
-			return ($ssl = $this->is_ssl());
-		}
-		public function __get_port() {
-			return CAST( $this->server['SERVER_PORT'], 'int strict', -1 );
-		}
-		public function __get_requestTime() {
-			$netRequestTime = @$this->_incomingRecord['environment']['server']['REQUEST_TIME'];
-			return empty($netRequestTime) ? PITAYA_BOOT_TIME : $netRequestTime;
-		}
-		public function __get_httpServer() {
-			static $_cache = NULL;
-			if ( $_cache ) return $_cache;
-			
-			$serverInfo = strtolower("{$this->_incomingRecord[ 'environment' ][ 'server' ][ 'SERVER_SOFTWARE' ]}");
-			$divider = strpos( $serverInfo, '/' );
-			$_cache = ( $divider === FALSE ) ? $serverInfo : substr($serverInfo, 0, $divider);
-			return $_cache;
-		}
-		public function __get_httpServerInfo() {
-			static $_cache = NULL;
-			if ( $_cache ) return $_cache;
-			
-			$serverInfo = strtolower("{$this->_incomingRecord[ 'environment' ][ 'server' ][ 'SERVER_SOFTWARE' ]}");
-			$divider = strpos( $serverInfo, ' ' );
-			if ( $divider !== FALSE ) {
-				$serverInfo = substr( $serverInfo, 0, $divider );
-			}
-			
-			
-			list($name, $version) = explode( '/', $serverInfo );
-			$_cache = stdClass([ 'server' => $name, 'version' => $version ]);
-			return (clone $_cache);
-		}
-		
-		private $_contentType = NULL;
-		public function __get_contentType() {
-			return ( $this->_contentType !== NULL ) ? $this->_contentType : ($this->_contentType = self::ParseContentType( @$this->server['CONTENT_TYPE'] ));
+			return "{$this->protocol}://{$this->domain}";
 		}
 		// endregion
 		
@@ -320,6 +369,7 @@
 		}
 		
 		/**
+		 * @param int $trace Traversal control value
 		 * @return ____pitaya_base_object__path_mapper_tracable
 		 */
 		public function URIPath( $trace = 0 ) {
@@ -352,7 +402,6 @@
 			
 			return ( $is_https = $isForwardedHttp || $isForwardedSSL || $isHttps || $isPort443 );
 		}
-		
 		public function redirect( $path, $status = NULL ) {
 			if ( headers_sent() ) return FALSE;
 			
@@ -1146,12 +1195,17 @@
 		}
 	}
 
+	/** @return PBRequest */
 	function PBRequest() {
 		return PBRequest::Request();
 	}
+	
+	/** @return ____pitaya_base_object_attr_builder */
 	function PBAttrCtrl() {
 		return PBRequest::AttrControl();
 	}
+	
+	/** @return ____pitaya_base_object_cors_controller */
 	function PBCORSCtrl() {
 		return PBRequest::CORSControl();
 	}
