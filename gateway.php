@@ -1,5 +1,5 @@
 <?php
-	define('__ROOT', realpath(__DIR__));
+	@define('__ROOT', realpath(__DIR__));
 	
 	
 	
