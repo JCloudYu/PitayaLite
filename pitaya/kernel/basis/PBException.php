@@ -1,4 +1,8 @@
 <?php
+	/**
+	 * Class PBException
+	 * @property-read mixed $descriptor
+	 */
 	class PBException extends Exception {
 		private $_errDescriptor = NULL;
 

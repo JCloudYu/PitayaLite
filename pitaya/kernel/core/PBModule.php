@@ -1,4 +1,15 @@
 <?php
+	/**
+	 * Class PBModule
+	 * @property-read string $id
+	 * @property-read string $id_short
+	 * @property-read string $id_medium
+	 * @property-read string $class
+	 * @property-read string $class_lower
+	 * @property-read string $class_upper
+	 * @property-read mixed[] $bootChain
+	 * @property-read mixed $error
+	 */
 	abstract class PBModule extends PBObject {
 		const PRIOR_MODULES = [];
 		public function precondition() {
@@ -44,9 +55,6 @@
 		public function __get_id_medium() {
 			return substr( $this->_instId, 0, 16 );
 		}
-		public function __get_id_long() {
-			return substr( $this->_instId, 0, 32 );
-		}
 	
 		public function __get_class() {
 			return get_class($this);
@@ -75,6 +83,8 @@
 		
 		private static $_MODULE_SEARCH_PATHS = [];
 		private static function InstantiateModule($identifier) {
+			static $_counter = 0;
+			
 			$moduleDesc = self::ParseModuleIdentifier( $identifier );
 			if ( $moduleDesc === FALSE ) {
 				throw( new Exception( "Given target module identifier has syntax error!" ) );
@@ -85,7 +95,7 @@
 			$package  = implode( '.', $moduleDesc[ 'package' ] );
 			$module	  = $moduleDesc[ 'module' ];
 			$class	  = empty($moduleDesc[ 'class' ]) ? $module : $moduleDesc[ 'class' ];
-			$moduleId = sha1( "{$package}.{$module}#{$class}&" . microtime() );
+			$moduleId = md5( "{$package}.{$module}#{$class}&" . (++$_counter) . '?' . microtime() );
 
 
 
@@ -250,6 +260,11 @@
 			return TRUE;
 		}
 	}
+	
+	/**
+	 * Class PBTplModule
+	 * @property-read mixed[] $vars
+	 */
 	abstract class PBTplModule extends PBModule {
 		private $_tplObj = NULL;
 	

@@ -303,7 +303,6 @@
 		public static function URLEncode( $data ){
 			return strtr(rtrim(base64_encode( $data ), '='), '+/', '-_');
 		}
-
 		public static function URLDecode( $data ){
 			$length = strlen( $data );
 			$repeat = 4 - ($length % 4);
@@ -313,7 +312,6 @@
 		public static function Encode( $data ){
 			return base64_encode($data);
 		}
-
 		public static function Decode( $data ) {
 			return base64_decode( $data, TRUE );
 		}

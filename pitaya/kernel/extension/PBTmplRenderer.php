@@ -1,4 +1,9 @@
 <?php
+	/**
+	 * Class PBTmplRenderer
+	 * @property-read string $tmplId
+	 * @property-read mixed $vars
+	 */
 	class PBTmplRenderer {
 		private static $_tplPath = NULL;
 		public static function SetTplPath( $path ) {

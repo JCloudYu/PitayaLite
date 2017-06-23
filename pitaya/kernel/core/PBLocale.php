@@ -1,4 +1,9 @@
 <?php
+	/**
+	 * Class PBLocale
+	 * @property string path Path to locale library
+	 * @property string locale Locale identifier
+	 */
 	final class PBLocale extends PBObject implements ArrayAccess {
 		public static function Locale() {
 			/** @var PBLocale $__locale_singleton */

@@ -1,4 +1,8 @@
 <?php
+	/**
+	 * Class PBProc
+	 * @property-read PBModule $entryModule
+	 */
 	class PBProc extends PBObject {
 		/** @var PBKernel */
 		private $_system = NULL;
@@ -93,6 +97,11 @@
 				]);
 			}
 		}
+		
+		/**
+		 * Retrieve the following module
+		 * @return mixed|null Null if there's no more module in the queue
+		 */
 		public function getNextModule() {
 			$desc = @$this->_bootSequence[0];
 			if ( $desc === NULL ) {
@@ -101,10 +110,24 @@
 			
 			return PBModule($desc->id);
 		}
+		
+		/**
+		 * Cancel the following module
+		 * @return bool True on success, False otherwise.
+		 */
 		public function cancelNextModule() {
 			$desc = @array_shift($this->_bootSequence);
 			return $desc !== NULL;
 		}
+		
+		/**
+		 * Cancel following modules in the queue and keeps the specified ones.
+		 * If the keeps argument is positive number, then the following number of modules will be kept.
+		 * If the argument is negative number, then the number of modules counting from bottom will be kept.
+		 * If the argument is an array of class names, then the instances within the list will be kept
+		 *
+		 * @param null|int|string[] $keeps Modules to be kept
+		 */
 		public function cancelModules( $keeps = NULL ) {
 			if ( func_num_args() == 0 ) {
 				$this->_bootSequence = [];
@@ -153,7 +176,12 @@
 		
 		
 		
-		private static $_LEADING_MODULES = [];
+		/**
+		 * The modules to be executed prior to the entry module.
+		 * If the argument is not specified then the registered leading modules will be returned.
+		 * @param null|mixed[] $modules The modules to be prepend
+		 * @return mixed[]|null
+		 */
 		public static function LEADING_MODULES($modules=[]) {
 			if ( func_num_args() == 0 ) {
 				return self::$_LEADING_MODULES;
@@ -176,8 +204,15 @@
 				return NULL;
 			}
 		}
+		private static $_LEADING_MODULES = [];
 		
-		private static $_TAILING_MODULES = [];
+		
+		/**
+		 * The modules to be executed after the entry module.
+		 * If the argument is not specified then the registered tailing modules will be returned.
+		 * @param null|mixed[] $modules The modules to be append
+		 * @return mixed[]|null
+		 */
 		public static function TAILING_MODULES($modules=[]) {
 			if ( func_num_args() == 0 ) {
 				return self::$_TAILING_MODULES;
@@ -200,6 +235,7 @@
 				return NULL;
 			}
 		}
+		private static $_TAILING_MODULES = [];
 		
 		
 		

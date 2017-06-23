@@ -20,11 +20,11 @@
 	 * @property-read string $httpServer
 	 * @property-read array $httpServerInfo
 	 * @property-read string $contentType
+	 * @property-read mixed $data
 	 */
 	 /*
 	  * @property-read array $range
 	  * @property-read string $rangeUnit
-	  * @property-read mixed $data
 	  * @property-read mixed $env
 	  * @property-read mixed $attr
 	  * @property-read mixed $baseQuery
@@ -242,6 +242,9 @@
 		public function __get_contentType() {
 			return $this->_contentType ?: ($this->_contentType = self::ParseContentType( @$this->server['CONTENT_TYPE'] ));
 		}
+		public function __get_data() {
+			return $this->_parsedData ?: $this->_incomingRecord['request']['data'];
+		}
 		
 		
 		
@@ -325,9 +328,6 @@
 
 			list($reqRangeType, $range) = @explode('=', "{$this->_incomingRecord['environment']['server']['HTTP_RANGE']}");
 			return $reqRangeType;
-		}
-		public function __get_data() {
-			return $this->_parsedData ?: $this->_incomingRecord['request']['data'];
 		}
 		public function __get_server() {
 			return $this->_incomingRecord['environment']['server'];

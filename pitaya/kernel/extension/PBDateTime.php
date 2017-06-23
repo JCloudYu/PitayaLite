@@ -1,4 +1,13 @@
 <?php
+	/**
+	 * Class PBDateTime
+	 * @property int $year
+	 * @property int $month
+	 * @property int $day
+	 * @property int $hour
+	 * @property int $minute
+	 * @property int $second
+	 */
 	class PBDateTime extends DateTime {
 		public static function FromFormat( $format, $timeStr ) {
 			$time = new PBDateTime();

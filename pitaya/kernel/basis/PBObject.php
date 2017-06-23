@@ -1,4 +1,8 @@
 <?php
+	/**
+	 * Class PBObject
+	 * @property-read string $class
+	 */
 	class PBObject {
 		private static $_getPrefix = "__get_";
 		private static $_setPrefix = "__set_";
@@ -31,7 +35,6 @@
 				throw(new Exception("Setting value to an undefined property '{$name}'."));
 		}
 		public function __get_class() {
-
 			return get_class($this);
 		}
 	}
