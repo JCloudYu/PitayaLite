@@ -327,11 +327,36 @@
 	 */
 	final class PBRSA {
 		/**
+		 * @param string $keySrc The key content or the key path
+		 * @param string $passPhrase The password that encrypts the key
+		 * @return PBRSA|null
+		 */
+		public static function LoadRSA($keySrc, $passPhrase='') {
+			$args = func_get_args();
+			return self::LoadRSAFile(...$args) ?: self::LoadRSAString(...$args);
+		}
+		
+		/**
+		 * @param string $path Path to the key file
+		 * @param string $passPhrase Password that is used to encrypt the key file
+		 * @return PBRSA|null
+		 */
+		public static function LoadRSAFile($path, $passPhrase='') {
+			if ( !is_file($path) || !is_readable($path) ) {
+				return NULL;
+			}
+			
+			$args = func_get_args();
+			$args[0] = file_get_contents($path);
+			return self::LoadRSAString(...$args);
+		}
+		
+		/**
 		 * @param mixed $pack The packed content of the key
 		 * @param string $passPhrase The pass phrase that encodes the packed content
 		 * @return PBRSA|null
 		 */
-		public static function LoadRSA($pack, $passPhrase='') {
+		public static function LoadRSAString($pack, $passPhrase='') {
 			$args = [$pack];
 			if ( !empty($passPhrase) ) {
 				$args[] = $passPhrase;

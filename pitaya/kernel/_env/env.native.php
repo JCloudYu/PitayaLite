@@ -1,6 +1,6 @@
 <?php
 	@define( 'IS_WIN_ENV', strtoupper(substr( PHP_OS, 0, 3 )) === 'WIN' );
-	@define( 'IS_COM_LIB_AVAILABLE', !class_exists( 'COM' ) );
+	@define( 'IS_COM_LIB_AVAILABLE', class_exists( 'COM' ) );
 	
 	if ( IS_WIN_ENV && !IS_COM_LIB_AVAILABLE ) {
 		error_log( "COM extension ( php_com_dotnet.dll ) is not enabled! Some feature functions will not available!" );

@@ -11,3 +11,9 @@
 	function object($item = NULL, $force = FALSE) {
 		return call_user_func_array( 'stdClass', func_get_args() );
 	}
+	
+	function pb_iterator($traversable) {
+		foreach($traversable as $key => $value) {
+			yield $key => $value;
+		}
+	}
