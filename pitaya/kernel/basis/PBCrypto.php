@@ -80,6 +80,13 @@
 		}
 	}
 	final class PBJWT {
+		const SUPPORTED_ALG = [
+			'NONE',
+			'HS256', 'HS384', 'HS512',
+			'RS256', 'RS384', 'RS512',
+			'RAW_RS256', 'RAW_RS384', 'RAW_RS512'
+		];
+	
 		const ALG_NONE	= 'NONE';
 		const ALG_HS256 = 'HS256';
 		const ALG_HS384 = 'HS384';
@@ -204,9 +211,9 @@
 		 */
 		public static function Decode( $jwtToken, $secret = '' ) {
 			$jwtToken = explode( '.', "{$jwtToken}" );
-			if ( count($jwtToken) != 3 ) return NULL;
+			if ( count($jwtToken) < 2 ) return NULL;
 			
-			list( $encHeader, $encPayload, $sig ) = $jwtToken;
+			@list( $encHeader, $encPayload, $sig ) = $jwtToken;
 			$header = @json_decode(PBBase64::URLDecode($encHeader));
 			$payload = @json_decode(PBBase64::URLDecode($encPayload));
 
@@ -215,88 +222,108 @@
 			}
 
 
-			$verified = FALSE;
+
 			$argCount = func_num_args();
-			switch(strtoupper(@$header->alg)) {
-				case "NONE":
-					$verified = TRUE;
-					break;
-					
-				case "HS256":
-					if ( $argCount > 1 ) {
-						$verify = PBBase64::URLEncode(hash_hmac('sha256', "{$encHeader}.{$encPayload}", $secret, TRUE));
-						$verified = ($verify == $sig);
-					}
-					break;
-					
-				case "HS384":
-					if ( $argCount > 1 ) {
-						$verify = PBBase64::URLEncode(hash_hmac('sha384', "{$encHeader}.{$encPayload}", $secret, TRUE));
-						$verified = ($verify == $sig);
-					}
-					break;
-				
-				case "HS512":
-					if ( $argCount > 1 ) {
-						$verify = PBBase64::URLEncode(hash_hmac('sha512', "{$encHeader}.{$encPayload}", $secret, TRUE));
-						$verified = ($verify == $sig);
-					}
-					break;
-				
-				case "RS256":
-					if ( $argCount > 1 && is_a($secret, PBRSA::class) ) {
-						$verify = PBBase64::URLDecode($sig);
-						$verified = !!$secret->validate("{$encHeader}.{$encPayload}", $verify, OPENSSL_ALGO_SHA256);
-					}
-					break;
-				
-				case "RS384":
-					if ( $argCount > 1 && is_a($secret, PBRSA::class) ) {
-						$verify = PBBase64::URLDecode($sig);
-						$verified = !!$secret->validate("{$encHeader}.{$encPayload}", $verify, OPENSSL_ALGO_SHA384);
-					}
-					break;
-				
-				case "RS512":
-					if ( $argCount > 1 && is_a($secret, PBRSA::class) ) {
-						$verify = PBBase64::URLDecode($sig);
-						$verified = !!$secret->validate("{$encHeader}.{$encPayload}", $verify, OPENSSL_ALGO_SHA512);
-					}
-					break;
-				
-				case "RAW_RS256":
-					if ( $argCount > 1 && is_a($secret, PBRSA::class) ) {
-						$digest = sha256( "{$encHeader}.{$encPayload}", TRUE );
-						$verify = $secret->decrypt(PBBase64::URLDecode($sig));
-						$verified = ($digest == $verify);
-					}
-					break;
-				
-				case "RAW_RS384":
-					if ( $argCount > 1 && is_a($secret, PBRSA::class) ) {
-						$digest = sha384( "{$encHeader}.{$encPayload}", TRUE );
-						$verify = $secret->decrypt(PBBase64::URLDecode($sig));
-						$verified = ($digest == $verify);
-					}
-					break;
-				
-				case "RAW_RS512":
-					if ( $argCount > 1 && is_a($secret, PBRSA::class) ) {
-						$digest = sha512( "{$encHeader}.{$encPayload}", TRUE );
-						$verify = $secret->decrypt(PBBase64::URLDecode($sig));
-						$verified = ($digest == $verify);
-					}
-					break;
-					
-				default:
-					return NULL;
+			$msgBody  = "{$encHeader}.{$encPayload}";
+			if ( $argCount < 2 ) {
+				$verified = FALSE;
+			}
+			else {
+				$verified = self::Verify(strtoupper(@$header->alg), $msgBody, $sig, $secret);
 			}
 			
 			return stdClass([
 				'header'	=> $header,
 				'payload'	=> $payload,
-				'verified'	=> $verified
+				'body'		=> $msgBody,
+				'signature'	=> $sig,
+				'verified'	=> $verified,
 			]);
+		}
+		
+		/**
+		 * @param string $alg The algorithm to verify the body
+		 * @param string $body The msg body of the signature
+		 * @param string $sig The msg body's signature
+		 * @param string|PBRSA $secret The secret used to verify the signature
+		 * @return bool
+		 */
+		public static function Verify($alg, $body, $sig, $secret) {
+			switch(strtoupper($alg)) {
+				case "NONE":
+					return TRUE;
+					
+				case "HS256":
+					$verify = PBBase64::URLEncode(hash_hmac('sha256', $body, $secret, TRUE));
+					return $verify == $sig;
+					
+				case "HS384":
+					$verify = PBBase64::URLEncode(hash_hmac('sha384', $body, $secret, TRUE));
+					return ($verify == $sig);
+				
+				case "HS512":
+					$verify = PBBase64::URLEncode(hash_hmac('sha512', $body, $secret, TRUE));
+					return ($verify == $sig);
+				
+				case "RS256":
+					if ( !is_a($secret, PBRSA::class) ) {
+						return FALSE;
+					}
+					else {
+						$verify = PBBase64::URLDecode($sig);
+						return !!$secret->validate($body, $verify, OPENSSL_ALGO_SHA256);
+					}
+				
+				case "RS384":
+					if ( !is_a($secret, PBRSA::class) ) {
+						return FALSE;
+					}
+					else {
+						$verify = PBBase64::URLDecode($sig);
+						return !!$secret->validate($body, $verify, OPENSSL_ALGO_SHA384);
+					}
+				
+				case "RS512":
+					if ( !is_a($secret, PBRSA::class) ) {
+						return FALSE;
+					}
+					else {
+						$verify = PBBase64::URLDecode($sig);
+						return !!$secret->validate($body, $verify, OPENSSL_ALGO_SHA512);
+					}
+				
+				case "RAW_RS256":
+					if ( !is_a($secret, PBRSA::class) ) {
+						return FALSE;
+					}
+					else {
+						$digest = sha256( $body, TRUE );
+						$verify = $secret->decrypt(PBBase64::URLDecode($sig));
+						return ($digest == $verify);
+					}
+				
+				case "RAW_RS384":
+					if ( !is_a($secret, PBRSA::class) ) {
+						return FALSE;
+					}
+					else {
+						$digest = sha384( $body, TRUE );
+						$verify = $secret->decrypt(PBBase64::URLDecode($sig));
+						return ($digest == $verify);
+					}
+				
+				case "RAW_RS512":
+					if ( !is_a($secret, PBRSA::class) ) {
+						return FALSE;
+					}
+					else {
+						$digest = sha512( $body, TRUE );
+						$verify = $secret->decrypt(PBBase64::URLDecode($sig));
+						return ($digest == $verify);
+					}
+			}
+			
+			return FALSE;
 		}
 	}
 	final class PBBase64 {
