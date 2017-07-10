@@ -237,7 +237,7 @@
 			}
 
 			$hash = md5($package=trim($package));
-			if (self::$_MODULE_SEARCH_PATHS[$hash]) {
+			if (@self::$_MODULE_SEARCH_PATHS[$hash] !== NULL) {
 				return TRUE;
 			}
 

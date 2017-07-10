@@ -169,7 +169,7 @@
 
 			
 			$pkgPath = $tokens; array_unshift($pkgPath, $pkg);
-			$pkgPath = implode('.', $tokens);
+			$pkgPath = implode('.', $pkgPath);
 			while( ($entry = readdir($dirHandle)) !== FALSE ) {
 				if ( substr($entry, -4) != '.php' ) {
 					continue;
@@ -207,7 +207,7 @@
 			if ( !$G_CONF[ 'debug-mode' ] ) return '';
 
 
-			$width = intval($G_CONF[ 'debug-console-width' ]);
+			$width = intval($G_CONF[ 'debug-dialog-width' ]);
 
 			$out = '';
 			if( IS_HTTP_ENV ) {

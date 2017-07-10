@@ -106,17 +106,29 @@
 		}
 		
 		private static $_bootResolver = NULL;
-		public static function SetBasisResolver($callable ){
+		public static function SetBasisResolver($callable){
 			if ( !is_callable($callable) ) return;
 			self::$_bootResolver = $callable;
 		}
 		// endregion
+		
+		
+		
+		/** @var PBProc */
+		private $_process = NULL;
 
-		// region [ Boot Control ]
 		private function __construct() {}
 		private function __initialize() {
 			$G_CONF = PBStaticConf( 'pitaya-env' );
 			foreach( $G_CONF[ 'boot-scripts' ] as $script ) {
+				$path = path($script) . '.php';
+				if ( is_file($path) && is_readable($path) ) {
+					require_once $path;
+				}
+			}
+			
+			// INFO: Allow developers to assign custom boot scripts dynamically
+			foreach( $this->_customBootScripts as $script ) {
 				$path = path($script) . '.php';
 				if ( is_file($path) && is_readable($path) ) {
 					require_once $path;
@@ -139,8 +151,6 @@
 			// INFO: Bring up the main process
 			$this->__forkProcess($module);
 		}
-		
-
 		private function __judgeMainService() {
 			$G_CONF = PBStaticConf( 'pitaya-env' );
 		
@@ -253,18 +263,23 @@
 
 			throw(new Exception("Cannot locate default basis ({$reqService})!"));
 		}
-		// endregion
-
-		// region [ Process Control ]
-		/** @var PBProc */
-		private $_process = NULL;
 		private function __forkProcess($module) {
 			if ( $this->_process ) return;
 			
 			$this->_process = PBProc($this);
 			$this->_process->prepareQueue($module);
 		}
-		// endregion
+		
+		private $_customBootScripts = [];
+		public function addBootScripts($bootScripts=[]) {
+			if ( !is_array($bootScripts) ) {
+				$bootScripts = [$bootScripts];
+			}
+			
+			foreach( $bootScripts as $script ) {
+				$this->_customBootScripts[] = $script;
+			}
+		}
 	}
 	function PBKernel() {
 		return PBKernel::Kernel();

@@ -1,4 +1,9 @@
 <?php
+	
+	/**
+	 * Class PBDataTree
+	 * @property-read mixed $object
+	 */
 	class PBDataTree implements ArrayAccess, JsonSerializable {
 		private $_anchor = NULL;
 		

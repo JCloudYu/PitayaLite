@@ -439,10 +439,10 @@
 					return ($this->_pubCache = new PBRSA($hKey, FALSE));
 				
 				case "publicKey":
-					return $this->_keyDetail['key'];
+					return trim($this->_keyDetail['key']);
 					
 				case "privateKey":
-					return $this->exportPrivateKey();
+					return trim($this->exportPrivateKey());
 				
 				case "size":
 					return $this->_keyDetail['bits'];

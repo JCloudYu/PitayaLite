@@ -55,6 +55,8 @@
 			// Merging params
 			$param = clone $param;
 			$result->scope = PBScope()->breadcrumb();
+			unset($param->scope);
+			
 			if ( property_exists($param, 'data') ) {
 				$result->data = $param->data;
 				unset($param->data);
