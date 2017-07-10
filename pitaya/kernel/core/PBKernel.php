@@ -22,24 +22,25 @@
 
 				Termination::NORMALLY();
 			}
-			catch( Exception $e )
-			{
+			catch( Exception $e ) {
 				$errMsg = "Uncaught exception: " . $e->getMessage();
 				$extMsg = "";
 
-				if ( is_a( $e, 'PBException' ) )
-				{
+				if ( is_a( $e, 'PBException' ) ) {
 					$descriptor = $e->descriptor;
-
-					if ( !empty($descriptor) )
+					if ( !empty($descriptor) ) {
 						$errMsg .= "\nData:\n" . print_r( $descriptor, TRUE );
+					}
 				}
 
-				if ( $G_CONF[ 'log-exceptions' ] === TRUE )
-				{
+
+
+				if ( $G_CONF[ 'log-exceptions' ] === TRUE ) {
 					PBLog( 'exception' )->log(print_r($e, TRUE));
 					$extMsg = "See exception log for more information!";
 				}
+
+
 
 				PBLog( 'error' )->log( $errMsg );
 				if (!empty($extMsg)) {
@@ -48,55 +49,30 @@
 
 
 
-				if ( IS_CLI_ENV )
-				{
-					PBStdIO::STDERR( $errMsg );
-					if (!empty($extMsg)) PBStdIO::STDERR( $extMsg );
-				}
-				else
-				{
-					error_log( preg_replace( '/(\n|\s)+/', ' ', $errMsg) );
-					if (!empty($extMsg)) error_log( preg_replace( '/(\n|\s)+/', ' ', $errMsg) );
-				}
-
-
-
-				// INFO: Check vailidaty of default error processing module
-				/** @var PBModule */
-				$errProcObj = NULL;
-				if ( defined( "ERROR_MODULE" ) )
-				{
-					try
-					{
-						$errProcObj = PBModule(ERROR_MODULE);
-					}
-					catch( Exception $e )
-					{
-						$errProcObj = NULL;
-					}
-				}
-
-
-				if ( $errProcObj )
-				{
-					$errProcObj->execute( $e );
-				}
-				else
-				if ( $G_CONF[ 'throw-exceptions' ] === TRUE )
-				{
+				if ( $G_CONF[ 'throw-exceptions' ] === TRUE ) {
 					throw( $e );
 				}
-				else
-				if ( IS_HTTP_ENV && $G_CONF[ 'debug-mode' ] )
-				{
-					if ( !headers_sent() )
-					{
-						header( "HTTP/1.1 500 Internal Server Error" );
-						header( "Status: 500 Internal Server Error" );
-						header( "Content-Type: text/html; charset=utf8" );
+				
+				
+				
+				if ( IS_HTTP_ENV ) {
+					@header( "HTTP/1.1 500 Internal Server Error" );
+					
+					error_log( preg_replace( '/(\n|\s)+/', ' ', $errMsg) );
+					if ( !empty($extMsg) ) {
+						error_log( preg_replace( '/(\n|\s)+/', ' ', $extMsg) );
 					}
-
-					echo $errMsg;
+					
+					if ( $G_CONF[ 'debug-mode' ] ) {
+						@header( "Content-Type: text/html; charset=utf8" );
+						echo $errMsg;
+					}
+				}
+				else {
+					PBStdIO::STDERR( $errMsg );
+					if ( !empty($extMsg) ) {
+						PBStdIO::STDERR( $extMsg );
+					}
 				}
 
 

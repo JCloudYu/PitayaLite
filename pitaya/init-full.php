@@ -2,10 +2,10 @@
 	Pitaya([
 		'space-root' => __ROOT,
 		'packages' => [
-			'broot'		=> @constant( '__BASIS_PATH' ) ?: __ROOT.'/Basis',
-			'share' 	=> @constant( '__SHARE_PATH' ) ?: __ROOT.'/Share',
-			'data'		=> @constant( '__DATA_PATH' ) ?: __ROOT.'/Data',
-			'lib'		=> @constant( '__LIB_PATH' )  ?: __ROOT.'/Lib'
+			'broot'		=> @constant( 'BASIS_PATH' ) ?: __ROOT.'/basis',
+			'share' 	=> @constant( 'SHARE_PATH' ) ?: __ROOT.'/share',
+			'data'		=> @constant( 'DATA_PATH' ) ?: __ROOT.'/data',
+			'lib'		=> @constant( 'LIB_PATH' )  ?: __ROOT.'/lib'
 		],
 		'module-packages' => [
 			'data.modules', 'share.modules'
@@ -24,5 +24,5 @@
 		
 		'leading-modules' => [],
 		'tailing-modules' => [],
-		'log-dir' => @constant( 'SYS_LOG_DIR' ) ?: __ROOT . '/Log'
+		'log-dir' => @constant( 'SYS_LOG_DIR' ) ?: __ROOT . '/log'
 	]);
