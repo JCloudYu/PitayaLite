@@ -147,7 +147,16 @@
 				$resource	 = ary_filter( empty($resource) ? array() : explode( '/', $resource ), function( $item ) {
 					return urldecode( $item );
 				});
-				$attachPoint = @array_splice( $resource, 0, $G_CONF[ 'attach-depth' ] );
+				
+				$depth = $G_CONF[ 'attach-depth' ];
+				if ( $depth >= 0 ) {				
+					$attachPoint = @array_splice( $resource, 0, $depth );	
+				}
+				else {
+					$depth = count($resource) + $depth + 1;
+					$attachPoint = @array_splice( $resource, 0, $depth );
+				}
+				
 				$GLOBALS[ 'attachPoint' ] = $attachPoint;
 				$GLOBALS[ 'rawRequest' ] = implode('/', $resource) . (empty($attributes) ? '' : "?{$attributes}");
 
